@@ -4,10 +4,10 @@
 import {
   G, global, Instance, defineObject, defineScript, instance_create, instance_destroy, instancesOf, place_meeting, point_distance, draw_self, draw_sprite_ext, event_user, S, snd_play, snd_stop,
   left_h, right_h, up_h, down_h, button2_h, button1_p, button1_h, button1_r, random,
-} from './rt.js?v=20261106131626';
-import { first, view_x, view_y, move_towards_point } from './common.js?v=20261106131626';
-import { drawSoulHat } from '../hats.js?v=20261106131626';
-import { snd_loop, snd_pitch, snd_volume } from '../runtime/audio.js?v=20261106131626';
+} from './rt.js?v=20261106142257';
+import { first, view_x, view_y, move_towards_point } from './common.js?v=20261106142257';
+import { drawSoulHat } from '../hats.js?v=20261106142257';
+import { snd_loop, snd_pitch, snd_volume } from '../runtime/audio.js?v=20261106142257';
 
 const SOLID = 'obj_battlesolid';
 
@@ -51,7 +51,6 @@ export class Heart extends Instance {
     if (up_h()) press_u = 1;
     if (down_h()) press_d = 1;
     let px = 0, py = 0;
-    if (this.color === 1) this.yellowStep();
     const wspeed = this.wspeed;
     if (this.canmove) {
       if (press_r === 1) px = wspeed;
@@ -118,12 +117,14 @@ export class Heart extends Instance {
     }
     global.inv -= 1;
     if (global.inv > 0) this.image_speed = 0.25;
-    else if (!(this.color === 1 && this.z_hold >= 40)) {
+    else {
       this.image_speed = 0;
       this.image_index = 0;
     }
     global.heartx = this.x + 2 - view_x();
     global.hearty = this.y + 2 - view_y();
+    // At the end of Step, as in the GML: shots spawn from the moved SOUL and wspeed applies next frame.
+    if (this.color === 1) this.yellowStep();
   }
   // obj_heart Step_0, color == 1: shots, the BIG SHOT charge and Susie's Supercharge.
   yellowStep() {

@@ -6,14 +6,14 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261106131626';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106131626';
-import { scr_bulletspawner } from './dbullet.js?v=20261106131626';
+} from './rt.js?v=20261106142257';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106142257';
+import { scr_bulletspawner } from './dbullet.js?v=20261106142257';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle,
-} from '../runtime/gm.js?v=20261106131626';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop } from '../runtime/audio.js?v=20261106131626';
+} from '../runtime/gm.js?v=20261106142257';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop } from '../runtime/audio.js?v=20261106142257';
 
 const snd_free = s => { if (s) mus_stop(s); };
 
@@ -239,7 +239,8 @@ export class SpamtonNeoEnemy extends MonsterParent {
     const m = this.myself, tf = global.tempflag?.[37] ?? 0;
     const cap = tf < 2 ? [26, 0.5, 1] : tf < 4 ? [22, 0.25, 1] : tf < 6 ? [18, 0.1, 0] : tf < 10 ? [15, 0.04, 0] : null;
     if (!cap) return;
-    global.monsterat[m] = Math.min(cap[0], global.monsterat[m] + cap[1]);
+    // Adds while below the cap (so it can end just past it, as in the GML), else sets the cap.
+    global.monsterat[m] = global.monsterat[m] < cap[0] ? global.monsterat[m] + cap[1] : cap[0];
     if (cap[2]) this.hellmode = 1;
   }
   balloon() {
@@ -354,8 +355,6 @@ export class SpamtonNeoEnemy extends MonsterParent {
   // talkedcon == 1: the balloon is done; the box (sized per attack) and the SOUL come in.
   startBullets() {
     if (this.partmode === 40) { this.partmode = 1; this.shockthreshold = 0; this.hurttimer2 = 0; }
-    this.shootydanceinit = 0;
-    this.dance_timer = 0;
     this.rtimer = 0;
     S.scr_blconskip(this, -1);
     if (!isphase('bullets')) return;
@@ -366,6 +365,9 @@ export class SpamtonNeoEnemy extends MonsterParent {
         g.x += 54;
         g.maxxscale = 3.2;
         g.maxyscale = 1.5;
+        // shootydanceinit is never reset: every dance sways around where the first one started.
+        this.chargesfxtimer = 0;
+        this.dance_timer = 0;
         this.armaim = -80;
         if (d === 3) this.rememberAndMove(this.x + 50, this.y, 8);
       }
@@ -512,14 +514,18 @@ export class SpamtonNeoEnemy extends MonsterParent {
       this.actconral = 0;
       this.actingral = 0;
       this.actcon = 1;
-      const fluff = objectExists('obj_sneo_tiny_ralsei') ? instancesOf('obj_sneo_tiny_ralsei').length : 0;
-      if (fluff < 4) {
-        msgset(0, global.simultotal > 1 ? '* Ralsei defended you!/%' : "* The power Ralsei's fluffy warmth surrounds you!./%");
+      const fluffs = () => instancesOf('obj_sneo_tiny_ralsei');
+      if (fluffs().length < 4) {
+        msgset(0, this.simultotal == 1 ? "* The power Ralsei's fluffy warmth surrounds you!./%" : '* Ralsei defended you!/%');
         S.scr_battletext_default(this);
-        // TODO: obj_sneo_tiny_ralsei (the orbiting fluff shields) is not ported yet; until then
-        // FluffyGuard gives the "Too many fluff balls" heal instead.
-        if (objectExists('obj_sneo_tiny_ralsei')) for (let k = 0; k < 2; k++) instance_create(this.x, this.y, 'obj_sneo_tiny_ralsei');
-        else this.fluffHeal();
+        fluffs().forEach((f, k) => { f.place = k * 90; });
+        for (let r = 0; r < 2; r++) {
+          instance_create(this.x, this.y, 'obj_sneo_tiny_ralsei');
+          const all = fluffs(), n = all.length;
+          // 4 balls: 90 degrees apart; 3: 0/180/360; 2: 0/270 (as in the GML).
+          const step = n === 4 ? 90 : n === 3 ? 180 : n === 2 ? 270 : 0;
+          if (step) all.forEach((f, k) => { f.place = k * step; });
+        }
       } else {
         msgset(0, "* Too many fluff balls!&* Can't make any more!/%");
         S.scr_battletext_default(this);
@@ -534,11 +540,16 @@ export class SpamtonNeoEnemy extends MonsterParent {
       } else if (this.endcon === 0) S.scr_nextact(this);
     }
   }
-  // The "Too many fluff balls" heal: +10 HP to Susie or Ralsei, whoever has less (hp[2] / hp[3]).
+  // The "Too many fluff balls" heal: +10 HP (not capped at max HP) to whoever of Susie, Ralsei and
+  // Noelle (hp[2..4]) has the least, compared in the GML's order.
   fluffHeal() {
     const hp = global.hp;
-    const a = hp[3] < hp[2] ? 3 : 2;
-    hp[a] = Math.min(global.maxhp[a], hp[a] + 10);
+    let a = 2;
+    if (hp[3] < hp[2]) a = 3;
+    if (hp[3] < hp[4]) a = 3;
+    if (hp[4] < hp[2]) a = 4;
+    if (hp[4] < hp[3]) a = 4;
+    hp[a] += 10;
     snd_play('snd_boost');
   }
   // endcon 1..4: the defeat cutscenes (HP gone: version 0; mercy 100: version 1), then the win.
@@ -771,7 +782,11 @@ export class SpamtonNeoEnemy extends MonsterParent {
     }
     this.armendx = this.x + this.partx[1] + this.partxoff[1] + lengthdir_x(this.armlength, pr[1] - 93);
     this.armendy = this.y + this.party[1] + this.partyoff[1] + lengthdir_y(this.armlength, pr[1] - 93);
-    if (this.dance_timer === 0) ideal[5] = -15;
+    if (this.dance_timer === 0) {
+      const h = first('obj_heart');
+      if (h) this.armangle = point_direction(this.partxoff[1], this.partyoff[1], h.x, h.y);
+      ideal[5] = -15;
+    }
     if (i !== 1 || this.endcon > 0) {
       ps[i] += 0.1;
       this.partx[i] = lerp(this.partx[i], 0, 0.5);
@@ -791,12 +806,18 @@ export class SpamtonNeoEnemy extends MonsterParent {
       this.dance_timer += 1;
       const t = this.dance_timer;
       if (t === 17 - fastshot * 10 || t === 52 - fastshot * 10) {
-        // obj_sneo_biglaser (_type 1, the charge glow) is not ported: only its charge sound plays.
+        // obj_sneo_biglaser _type 1: the charge glow at the end of his arm cannon.
+        if (objectExists('obj_sneo_biglaser')) {
+          const d = instance_create(this.x, this.y, 'obj_sneo_biglaser');
+          d.depth += 1;
+          d._type = 1;
+        }
         if (this.chargeshot_sound) snd_stop(this.chargeshot_sound);
         this.chargeshot_sound = snd_loop('snd_chargeshot_charge');
         this.chargesfxtimer = 1;
       }
       const fire = dir => {
+        for (const l of instancesOf('obj_sneo_biglaser')) instance_destroy(l);
         const shot = instance_create(this.armendx, this.armendy, 'obj_spamtonshot');
         shot.target = this.mytarget;
         shot.damage = this.damage;
@@ -821,8 +842,11 @@ export class SpamtonNeoEnemy extends MonsterParent {
       }
     }
     if (i === 1 && this.endcon === 0) {
-      pr[i] = lerp(pr[i], this.armaim, 0.12);
+      const lasers = instancesOf('obj_sneo_biglaser');
+      const shakebuster = lasers.length ? -4 + random(8) : 0;
+      pr[i] = lerp(pr[i], this.armaim, 0.12) + shakebuster;
       this.partframe[i] = 1;
+      for (const l of lasers) { l.x = this.armendx; l.y = this.armendy; }
     }
     return false;
   }

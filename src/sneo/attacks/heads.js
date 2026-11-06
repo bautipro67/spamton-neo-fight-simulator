@@ -2,11 +2,13 @@
 // obj_sneo_guymaker, obj_sneo_lilguy, obj_sneo_lilguy_bullet, obj_sneo_crew_dissolve.
 import {
   global, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
-  choose, random, merge_color, snd_play, snd_volume, bgr, S,
-} from '../rt.js?v=20261106131626';
-import { first, camerax, cameray, scr_bullet_init, move_towards_point, scr_doom, snd_play_x, scr_afterimage } from '../common.js?v=20261106131626';
-import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106131626';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106131626';
+  choose, random, merge_color, snd_play, snd_volume, bgr, S, objectExists, irandom, draw_set_color, draw_circle, draw_self, lengthdir_x, lengthdir_y,
+} from '../rt.js?v=20261106142257';
+import {
+  first, camerax, cameray, scr_bullet_init, move_towards_point, scr_doom, snd_play_x, scr_afterimage, scr_movetowards,
+} from '../common.js?v=20261106142257';
+import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106142257';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106142257';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 
@@ -54,7 +56,41 @@ export class SneoBulletController extends BulletGenParent {
         global.turntimer = 240;
         if (this.difficulty === 2) global.turntimer = 360;
         if (this.difficulty === 3) global.turntimer = 300;
-      } else if (this.difficulty === 3 && this.btimer === 1 && s) s.partmode = 36;
+      } else if (this.difficulty === 2 && s) this.armLaser(s);
+      else if (this.difficulty === 3 && this.btimer === 1 && s) s.partmode = 36;
+    }
+  }
+  // Difficulty 2 (unused in the fight): three arm-cannon laser beams (obj_sneo_biglaser firecon 1).
+  armLaser(s) {
+    const b = this.btimer, lasers = () => instancesOf('obj_sneo_biglaser');
+    const place = l => {
+      l.x = this.sneoarm_x + lengthdir_x(60, this.armangle - 90);
+      l.y = this.sneoarm_y + lengthdir_y(60, this.armangle - 90);
+      l.direction = this.armangle - 90;
+      l.image_angle = this.armangle - 90;
+    };
+    if (b === 40 || b === 150 || b === 260) {
+      this.sneoarm_x = s.x + s.partxoff[1];
+      this.sneoarm_y = s.y + s.partyoff[1];
+      this.armangle = -68 - random(32);
+      this.side = this.armangle;
+      const d = instance_create(0, 0, 'obj_sneo_biglaser');
+      place(d);
+      d.depth += 1;
+      d.damage = this.damage * 2;
+      d.target = this.target;
+      s.aimmode = 1;
+      s.armaim = this.armangle;
+      s.partmode = 3;
+    } else if (b === 90 || b === 200 || b === 310) {
+      for (const l of lasers()) { l.firecon = 1; l.active = 1; l.image_blend = 0xffffff; }
+      s.partmode = 12;
+    } else if ((b >= 90 && b < 120) || (b >= 200 && b < 230) || (b >= 310 && b < 340)) {
+      for (const l of lasers()) place(l);
+      s.armaim = this.armangle;
+    } else if (b === 130 || b === 240 || b === 350) {
+      for (const l of lasers()) l.firecon = 2;
+      s.partmode = 4;
     }
   }
   onDestroy() {
@@ -332,6 +368,8 @@ class SpamtonShot extends BasicBulletSneo {
     this.sprite_index = 'spr_sneo_bullet1';
   }
   create() {
+    const ha = first('obj_sneo_heartattack');
+    if (ha && ha.heart_health < 1) { instance_destroy(this); return; }
     super.create();
     this.con = 0;
     this.siner = 0;
@@ -356,4 +394,67 @@ class SpamtonShot extends BasicBulletSneo {
   }
 }
 defineObject('obj_spamtonshot', SpamtonShot);
+
+// obj_sneo_biglaser: the glow charging at the end of his arm cannon (the dance, _type 1, and the
+// heart attack's aimed shots). firecon 1 / 2 (the laser beam itself) only appear in the unused
+// Flying Heads difficulty 2. Its friendly hitbox and telegraph objects draw nothing and are left out.
+class SneoBiglaser extends CollideBullet {
+  constructor() {
+    super();
+    this.sprite_index = 'spr_sneo_laser';
+  }
+  create() {
+    scr_bullet_init(this);
+    Object.assign(this, {
+      element: 6, destroyonhit: 0, active: 0, image_yscale: 0.05, image_xscale: 0, mask_index: 'spr_nothing', firecon: 0,
+      effecttimer: 0, siner: 0, orbsize: 0, grazepoints: 10, grazed: 1, _type: 0,
+    });
+    const s = sneo();
+    if (s) this.damage = global.monsterat[s.myself] * 5;
+    const bc = first('obj_sneo_bulletcontroller');
+    if (bc) this.target = bc.target;
+  }
+  draw() {
+    if (this.firecon === 0) {
+      this.image_yscale = 0.001;
+      this.image_xscale = 2;
+      if (this.effecttimer <= 42 && this.effecttimer % 6 === 0 && objectExists('obj_rouxls_power_up_orb')) {
+        const n = this._type === 1 ? 3 : 6, arc = 360 / n;
+        for (let i = 0; i < n; i++) {
+          const d = instance_create(this.x, this.y, 'obj_rouxls_power_up_orb');
+          d.direction = irandom(arc) + i * arc;
+          d.lifetime = 16;
+          d.depth = this.depth + 1;
+          d.image_blend = this.image_blend;
+          d.parenttarget = this;
+          d._type = this._type;
+        }
+      }
+      if (this.effecttimer > 50) this.orbsize -= 4;
+      else this.orbsize += 1;
+      draw_set_color(0xffffff);
+      draw_circle(this.x, this.y, Math.max(2, this.orbsize / 2 + Math.sin(this.siner / 2) * 2), false);
+      this.effecttimer += 1;
+      this.siner += 1;
+    } else if (this.firecon === 1) {
+      this.active = 1;
+      this.mask_index = 'spr_sneo_laser';
+      if (this.image_yscale < 0.5) this.image_yscale = scr_movetowards(this.image_yscale, 0.5, 0.1);
+      else this.image_yscale -= 0.05;
+      draw_set_color(0xffffff);
+      draw_circle(this.x, this.y, this.image_yscale * 100, false);
+      draw_self(this);
+    } else if (this.firecon === 2) {
+      draw_set_color(0xffffff);
+      this.active = 0;
+      this.mask_index = 'spr_nothing';
+      if (this.image_yscale <= 0.01) this.image_yscale -= 0.0025;
+      else this.image_yscale = scr_movetowards(this.image_yscale, 0.01, 0.1);
+      if (this.image_yscale <= 0) { instance_destroy(this); return; }
+      draw_circle(this.x, this.y, this.image_yscale * 100, false);
+      draw_self(this);
+    }
+  }
+}
+defineObject('obj_sneo_biglaser', SneoBiglaser);
 export { instancesOf, snd_play };

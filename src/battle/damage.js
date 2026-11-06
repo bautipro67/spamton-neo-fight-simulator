@@ -1,14 +1,15 @@
 // Party damage, down state, revive/heal, enemy targeting, game over trigger.
 import {
   global, G, defineScript, S, instance_create, instance_exists, withObj, choose, round, ceil,
-} from '../runtime/gm.js?v=20261106131626';
-import { snd_play, snd_stop, snd_free_all } from '../runtime/audio.js?v=20261106131626';
-import { withInst, knightEnemy } from './common.js?v=20261106131626';
+} from '../runtime/gm.js?v=20261106142257';
+import { snd_play, snd_stop, snd_free_all } from '../runtime/audio.js?v=20261106142257';
+import { withInst, knightEnemy } from './common.js?v=20261106142257';
 
 const g = global;
 
 // scr_damage(): bullet scope. Reads caller.target (slot, 3 = all, 4 = anyone) and caller.damage.
-// Chapter 3, with the Knight rules: Kris is not targeted while the others stand, ShadowMantle,
+// Chapter 2 rules (40 invincibility frames, armor element resistance), plus the Chapter 3
+// Knight rules (inactive in this fight): Kris is not targeted while the others stand, ShadowMantle,
 // downed Susie/Ralsei go to -999, and no game over from here (the Knight decides at turn end).
 defineScript('scr_damage_calculation', (dmg, slot) => {
   let d = dmg;
@@ -39,10 +40,28 @@ defineScript('scr_randomtarget_old', (inst) => {
 
 const hasMantle = c => g.chararmor1[c] == 23 || g.chararmor2[c] == 23;
 
+// scr_element_damage_reduction(element, char): armor resistances (Chapter 2: Spamton NEO's bullets
+// are element 6, which FrayedBowtie and Dealmaker resist). Never below 25%.
+defineScript('scr_element_damage_reduction', (element, ch) => {
+  let r = 1;
+  if (element != 0) {
+    for (let i = 1; i <= 2; i++) {
+      const el = g.itemelement?.[ch]?.[i] ?? 0, amt = g.itemelementamount?.[ch]?.[i] ?? 0;
+      if (el != 0) {
+        if (el == element) r -= amt;
+        if (el == 9 && (element == 2 || element == 8)) r -= amt;
+        if (el == 10) r -= amt;
+      }
+    }
+  }
+  return r < 0.25 ? 0.25 : r;
+});
+
 defineScript('scr_damage', (inst) => {
   const debug_inv = g.chemg_god_mode ?? 0;
   if (!(g.inv < 0 && debug_inv == 0)) return;
   S.scr_damage_cache();
+  const element = typeof inst.element === 'number' ? inst.element : 0;
   const knight = knightEnemy();
   if (knight) knight.progamer = false;
   if (inst.target < 3) {
@@ -106,6 +125,7 @@ defineScript('scr_damage', (inst) => {
     inst.chartarget = g.char[inst.target];
     if (knight && truedamage == 0 && hasMantle(inst.target + 1)) inst.tdamage = round(inst.tdamage * 0.33);
     if (truedamage == 0 && g.charaction[inst.target] == 10) inst.tdamage = ceil(2 * inst.tdamage / 3);
+    inst.tdamage = ceil(inst.tdamage * S.scr_element_damage_reduction(element, inst.chartarget));
     if (inst.tdamage < 1) inst.tdamage = 1;
   }
   // Simulator option: Easy Mode halves the damage the party takes.
@@ -157,6 +177,7 @@ defineScript('scr_damage', (inst) => {
         // As in the GML, tdamage carries over: each hero's defense and mantle reduce it further.
         inst.tdamage = S.scr_damage_calculation(inst.tdamage, hpi);
         if (knight && hasMantle(hpi + 1)) inst.tdamage = round(inst.tdamage * 0.33);
+        inst.tdamage = ceil(inst.tdamage * S.scr_element_damage_reduction(element, ct));
         const td = inst.tdamage;
         if (g.charaction[hpi] == 10) g.hp[ct] -= ceil(3 * td / 4);
         else g.hp[ct] -= td;
@@ -164,7 +185,7 @@ defineScript('scr_damage', (inst) => {
       }
     }
   }
-  g.inv = g.invc * 30;
+  g.inv = g.invc * 40; // Chapter 2: 40 frames (Chapter 3 uses 30)
   S.scr_damage_check();
   let gameover = 1;
   for (let i = 0; i < 3; i++) if (g.char[i] != 0 && g.hp[g.char[i]] > 0) gameover = 0;
@@ -186,7 +207,7 @@ defineScript('scr_damage_all', (inst) => {
       if (g.hp[g.char[ti]] > 0 && g.char[ti] != 0) S.scr_damage(inst);
       if (!G.instances.length) return; // game over reset the room
     }
-    g.inv = g.invc * 30;
+    g.inv = g.invc * 40;
     inst.target = temptarget;
     S.scr_damage_check();
   }

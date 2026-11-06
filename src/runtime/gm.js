@@ -9,7 +9,7 @@
 // - Colours are 0xRRGGBB numbers. GML literals are BGR: wrap them in bgr(0x...).
 // - Angles are degrees, counter-clockwise; y points down (same as GameMaker).
 // - `global` holds GML globals: global.tension, global.hp[...] etc.
-import { assets, spriteMask } from './assets.js?v=20261106131626';
+import { assets, spriteMask } from './assets.js?v=20261106142257';
 
 export const global = {};
 export const ROOM_W = 640;

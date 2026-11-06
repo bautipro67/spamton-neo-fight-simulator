@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261106131626';
-import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261106131626';
-import { WEAPONS, ARMORS, BASE_STATS, getLoadout } from './equipment.js?v=20261106131626';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261106131626';
-import { registerBackground } from './misc.js?v=20261106131626';
+} from '../runtime/gm.js?v=20261106142257';
+import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261106142257';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261106142257';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261106142257';
+import { registerBackground } from './misc.js?v=20261106142257';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -140,6 +140,12 @@ defineScript('init_battle_globals', () => {
       global.itemat[c][slot] = s[1];
       global.itemdf[c][slot] = s[2];
       global.itemmag[c][slot] = s[3];
+    });
+    // scr_armorinfo's armorelementtemp / armorelementamounttemp (read by scr_element_damage_reduction).
+    [a1, a2].forEach((a, k) => {
+      const [el, amt] = ARMOR_ELEMENTS[a] ?? [0, 0];
+      global.itemelement[c][k + 1] = el;
+      global.itemelementamount[c][k + 1] = amt;
     });
   }
   loadout.items.filter(id => id).forEach((it, i) => { global.item[i] = it; });

@@ -6,9 +6,9 @@ import {
   global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   draw_self, d3d_set_fog, sprite_get_width, sprite_get_xoffset, sprite_get_yoffset,
   draw_sprite_part_ext, lerp, sprite_get_number,
-} from './rt.js?v=20261106131626';
-import { first, camerax, cameray, scr_bullet_init, lerp_ease_out } from './common.js?v=20261106131626';
-import { CollideBullet } from './bullets.js?v=20261106131626';
+} from './rt.js?v=20261106142257';
+import { first, camerax, cameray, scr_bullet_init, lerp_ease_out } from './common.js?v=20261106142257';
+import { CollideBullet } from './bullets.js?v=20261106142257';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 
@@ -26,7 +26,6 @@ export class YHeartShot extends Instance {
     this.sucked = 0;
     this.trail = 0;
     this.trail_timer = 0;
-    this.depth = -10;
     const s = sneo();
     if (s && s.upgrade > 0) {
       this.big = 1;
@@ -127,8 +126,8 @@ class SuperchargeEnd extends Instance {
     this.image_xscale = 1.5;
     this.image_yscale = 1.5;
   }
+  // Its Draw event never calls draw_self, so the sprite is not drawn: it only times itself out.
   draw() {
-    draw_self(this);
     this.timer += 1;
     if (this.timer === 16 || this.timer >= 96) instance_destroy(this);
   }

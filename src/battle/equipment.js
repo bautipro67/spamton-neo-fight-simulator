@@ -53,6 +53,8 @@ export const ARMORS = {
   21: ['Dealmaker', 0, 5, 5, ALL, '$ +30%'],
   22: ['RoyalPin', 0, 3, 1, ALL, ''],
 };
+// scr_armorinfo element resistances: id -> [element, amount] (element 6 is Spamton NEO's bullets).
+export const ARMOR_ELEMENTS = { 6: [7, 0.5], 16: [6, 0.35], 18: [1, 0.5], 20: [6, 0.15], 21: [6, 0.4] };
 // Items usable in battle (src/battle/spells.js, controller.js): id -> [name, effect]
 export const ITEMS = {
   0: ['(empty)', ''],
