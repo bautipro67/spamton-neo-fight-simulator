@@ -83,3 +83,4 @@ snd: ^snd_ultraswing$
 snd: ^snd_wallclaw$
 snd: ^snd_weaponpull_fast$
 spr:^spr_bullet_laser_(front|square)_sneo$
+spr: ^spr_shop_spamton_bg_battle$

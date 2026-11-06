@@ -1,12 +1,12 @@
 // Imports every Spamton NEO / bullet-phase module so their objects and scripts get registered.
-import './common.js?v=20261106142557';
-import './bullets.js?v=20261106142557';
-import './board.js?v=20261106142557';
-import './soul.js?v=20261106142557';
-import './shots.js?v=20261106142557';
-import './fluff.js?v=20261106142557';
-import './dbullet.js?v=20261106142557';
-import './enemy.js?v=20261106142557';
+import './common.js?v=20261106144300';
+import './bullets.js?v=20261106144300';
+import './board.js?v=20261106144300';
+import './soul.js?v=20261106144300';
+import './shots.js?v=20261106144300';
+import './fluff.js?v=20261106144300';
+import './dbullet.js?v=20261106144300';
+import './enemy.js?v=20261106144300';
 
 // Attack modules: a missing or broken one only disables that attack (enemy.js PORTED_RR).
 // In fight order: Flying Heads, RECREW columns, heart attack, phone call + phone hands, face attack,

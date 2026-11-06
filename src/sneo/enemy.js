@@ -6,16 +6,129 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261106142557';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106142557';
-import { scr_bulletspawner } from './dbullet.js?v=20261106142557';
+} from './rt.js?v=20261106144300';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106144300';
+import { scr_bulletspawner } from './dbullet.js?v=20261106144300';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
-  draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle,
-} from '../runtime/gm.js?v=20261106142557';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop } from '../runtime/audio.js?v=20261106142557';
+  draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
+} from '../runtime/gm.js?v=20261106144300';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261106144300';
 
 const snd_free = s => { if (s) mus_stop(s); };
+const sneoInst = () => first('obj_spamton_neo_enemy');
+
+// obj_sneo_vine_cut: a snapped wire flashes white and shakes, then its two ends pull apart (type 0).
+class VineCut extends Instance {
+  create() {
+    Object.assign(this, {
+      timer: 0, shakeamount: 10, type: 0, vineid: -1, hide: 0, x1: this.x, x2: this.x, y1: this.y, y2: this.y, x3: this.x,
+      x4: this.x, y3: this.y, y4: this.y, alpha: 1, lineangle: 0, anglecutspeed: 3, bottomlinevisible: 1,
+    });
+  }
+  draw() {
+    const s = sneoInst();
+    this.timer += 1;
+    if (this.shakeamount > 0) this.shakeamount -= 1;
+    const sh = this.shakeamount - random(this.shakeamount * 2);
+    if (s) this.y1 = s.y + s.party[this.vineid] - 10 + s.partyoff[this.vineid];
+    if (this.type === 0) {
+      if (this.timer === 11) {
+        this.x3 = this.x1;
+        this.x4 = this.x2;
+        this.y3 = this.y1 - 130;
+        this.y4 = this.y2;
+        this.y2 = this.y1 - 130;
+      }
+      if (this.timer > 11) {
+        if (this.y4 < this.y3) this.y3 -= 4;
+        if (this.y1 > this.y2) this.y2 += 4;
+      }
+      if (this.timer === 60) { instance_destroy(this); return; }
+    }
+    if (Math.abs(this.y1 - this.y2) < 16 || this.y2 > this.y1) this.bottomlinevisible = 0;
+    draw_set_alpha(this.alpha);
+    draw_set_color(bgr(4235519));
+    if ((this.timer >= 11 && this.type === 0 && this.hide === 0) || (this.type === 1 && this.hide === 0)) draw_line_width(this.x3, this.y3, this.x4, this.y4, 2);
+    if (this.bottomlinevisible === 1 && this.hide === 0) draw_line_width(this.x1 + sh, this.y1 + sh, this.x2 + sh, this.y2 + sh, 2);
+    if (this.timer < 11 && this.hide === 0) {
+      draw_set_color(0xffffff);
+      draw_set_alpha(11 - this.timer / 10);
+      draw_line_width(this.x1, this.y1, this.x2, this.y2, 2);
+    }
+    draw_set_alpha(1);
+  }
+}
+defineObject('obj_sneo_vine_cut', VineCut);
+
+// obj_sneo_vine_weak: the slash where a wire snaps.
+class VineWeak extends Instance {
+  constructor() { super(); this.sprite_index = 'spr_attack_cut1'; }
+  create() { this.image_speed = 0.25; }
+  step() { if (this.image_index > 3) instance_destroy(this); }
+}
+defineObject('obj_sneo_vine_weak', VineWeak);
+
+// obj_sneo_vine_transition: a back wire slides over to replace a snapped front wire (30 frames);
+// while extra_vines last, a new back wire appears to take its place.
+class VineTransition extends Instance {
+  create() {
+    const s = sneoInst();
+    Object.assign(this, { timer: 0, width: 1, vineid: s ? s.vineid : 0, hide: 0, a: 0, selected_vine: 0, y2: -400 });
+    if (!s) { instance_destroy(this); return; }
+    this.depth = s.depth + 5;
+    let c = irandom(17);
+    for (let e = 0; ; e++) {
+      if (s.partvisible_back[c] === 1) break;
+      c = (c + 1) % 18;
+      if (e + 1 > 18) { instance_destroy(this); return; }
+    }
+    this.a = c;
+    s.partvisible_back[c] = 0;
+    this.selected_vine = c;
+    this.x1 = s.x + s.partxoff_back[c] + Math.sin(s.partsiner_back[c] / 30) * 2;
+    this.x2 = s.x + s.partxoff_back[c];
+    this.y1 = s.y + s.partyoff_back[c];
+  }
+  draw() {
+    const s = sneoInst();
+    if (!s) { instance_destroy(this); return; }
+    const v = this.vineid, a = this.a;
+    this.timer += 1;
+    this.width += 1 / 30;
+    const x3 = s.x + s.partx[v] + s.partxoff[v] / 1.2 + v * 5 + Math.sin(s.partsiner[v] / 30) * 2;
+    if (global.myfight !== 3 && global.monsterattackname?.[s.myself] === 'UnspecifiedSneoAttack') {
+      this.x1 = s.x + s.partxoff_back[a] + Math.sin(s.partsiner_back[a] / 30) * 2;
+    }
+    this.y1 = s.y + s.partyoff_back[a];
+    for (let k = 0; k < 2; k++) {
+      if (this.x1 < x3 - 1) this.x1 += 1;
+      if (this.x2 < x3 - 1) this.x2 += 1;
+      if (this.x1 > x3 + 1) this.x1 -= 1;
+      if (this.x2 > x3 + 1) this.x2 -= 1;
+    }
+    if (this.timer >= 31) {
+      s.partvisible[v] = 1;
+      s.partweakened[v] = 0;
+      for (let ii = 0; ii < 18; ii++) {
+        if (s.partvisible_back[ii] === 0 && s.extra_vines > 0) {
+          s.extra_vines -= 1;
+          s.partvisible_back[ii] = 1;
+          s.vinebgcount += 1;
+        }
+      }
+      instance_destroy(this);
+    }
+    if (this.hide === 1) return;
+    draw_set_color(bgr(32768));
+    draw_line_width(this.x1, this.y1, this.x2, this.y2, this.width);
+    draw_set_alpha((31 - this.timer) / 30);
+    draw_set_color(make_color_rgb(0, 51, 0));
+    draw_line_width(this.x1, this.y1, this.x2, this.y2, this.width);
+    draw_set_alpha(1);
+  }
+}
+defineObject('obj_sneo_vine_transition', VineTransition);
 
 const MonsterParent = tagParent('obj_monsterparent');
 
@@ -87,11 +200,11 @@ const END_HP = [null,
   ["MEANS YOU'VE WON&[A Free Meal] TO&[Winning]?!/%", { shocktimer: 9999, hurttimer2: 10 }],
   ['NO!!! NO!!! NE-O!!/%', { shocktimer: 9999, hurttimer2: 10 }],
   ['KRIS!!&YOUR [Deal] HAS FAILED!!&[NEO] NEVER LOSES!!/%', { shocktimer: 9999, hurttimer2: 10 }],
-  ["THIS IS [Victory Smoke]!!&IT MEANS IT'S TIME&FOR MY [Second Form]!/%", { shockthreshold: 10, hurttimer2: 20, partmode: 40, smoke: true }],
+  ["THIS IS [Victory Smoke]!!&IT MEANS IT'S TIME&FOR MY [Second Form]!/%", { shockthreshold: 10, hurttimer2: 20, dontchangepose: 0, smokethreshold: 10, partmode: 40, smoke: true }],
   ['ARE YOU READY KRIS!?&FOR MY [Next Trick]!/%', {}],
   ['I WILL FILL MY [Body]&WITH [Electricaty] AND BECOME&SPAMTON [EX]!/%', {}],
   ['ARE YOU READY [Kids]!?/%', { shockthreshold: 10, hurttimer2: 10, overpower: 0.3, bg: -5, track: 20 }],
-  ['[Turn Up The JUICE!]&[Turn Up The JUICE!]/%', { shockthreshold: 5, overpower: 0.5, bg: -9 }],
+  ['[Turn Up The JUICE!]&[Turn Up The JUICE!]/%', { shockthreshold: 5, overpower: 0.5, bg: -9, smokethreshold: 1 }],
   ["[Make Sure You Don't&Get It On Your Shoese!]/%", { shockthreshold: 3, overpower: 0.7, bg: -13 }],
   ["ARE YOU GETTING&ALL THIS [Mike]!?&I'M FINALLY/%", { shockthreshold: 2, overpower: 0.9, bg: -17 }],
   ["I'M FINALLY GONNA&BE A BIG SHOT!!!/%", { shockthreshold: 1, overpower: 1.1, bg: -21 }],
@@ -110,7 +223,7 @@ const END_MERCY = [null,
   ["ARE YOU WATCHING,&[Heaven]!? IT'S&TIME FOR SPAMTON'S&[Comeback Special]!/%", {}],
   ['AND THIS TIME...&I LIVE FOR MYSELF!!!/%', {}],
   ['NO... MYSELF AND&MY [Friend(s)]!!!/%', { partmode: 36 }],
-  ['HERE I GO!!!!&WATCH ME FLY,&[MAMA]!!!!/%', { partmode: 36 }],
+  ['HERE I GO!!!!&WATCH ME FLY,&[MAMA]!!!!/%', { partmode: 36, dancealtcon: 2 }],
 ];
 
 export class SpamtonNeoEnemy extends MonsterParent {
@@ -159,6 +272,11 @@ export class SpamtonNeoEnemy extends MonsterParent {
     this.partsiner_back = new Array(18).fill(0);
     this.partxoff_back = Array.from({ length: 18 }, (_, ii) => sprite_get_xoffset(this.partsprite[0]) * (1.8 + ii / 9));
     this.partyoff_back = new Array(18).fill(sprite_get_yoffset(this.partsprite[0]) * 2);
+    this.partvisible_back = new Array(18).fill(1);
+    Object.assign(this, {
+      extra_vines: 26, lastwiretimer: 0, funnycheattimer: 0, funnycheattimer2: 0, funnycheattimer3: 0, headexpand: 0,
+      headforceframe: -1, fakegrav: 0, falltimer: 0, fallshake: 0, vineid: 0,
+    });
     this.armlength = point_distance(this.partxoff[1], this.partyoff[1], 36, 146);
     for (const b of instancesOf('obj_battleback')) instance_destroy(b);
     if (!i_ex('obj_ch2_sceneex2')) instance_create(0, 0, 'obj_ch2_sceneex2');
@@ -564,6 +682,12 @@ export class SpamtonNeoEnemy extends MonsterParent {
         global.myfight = -1;
         for (const o of instancesOf(['obj_growtangle', 'obj_heart', 'obj_sneo_bulletcontroller', 'obj_battlemsg'])) instance_destroy(o);
       }
+      if (this.endtimer > 0 && this.endtimer < 91) {
+        for (const b of instancesOf('obj_ch2_sceneex2')) {
+          b.trackspeed = lerp(-15, 0, this.endtimer / 90);
+          b.cityscape_speed_max = lerp(5, 0, this.endtimer / 90);
+        }
+      }
       if (this.endtimer === 91) {
         this.didwejustdie = 1;
         if (global.mercymod[m] > 99) this.sneo_defeat_cutscene_version = 1;
@@ -580,8 +704,17 @@ export class SpamtonNeoEnemy extends MonsterParent {
     }
     const mercy = this.sneo_defeat_cutscene_version === 1;
     if (this.endcon === 2) {
+      // Mercy ending: "[Friendship]" waits for the shop background to flash in (obj_ch2_sceneex2).
+      const bg = first('obj_ch2_sceneex2');
+      let aa = mercy && bg && bg.shop_spamton_bg_con > 0 && bg.shop_spamton_bg_con < 3 ? 1 : 0;
       this.talktimer += 1;
-      if ((button3_p() && this.talktimer > 15) || !writerExists()) {
+      if (mercy && aa === 0 && ((button3_p() && this.talktimer > 15) || !writerExists())) {
+        if (this.ballooncon === 7 && bg && bg.shop_spamton_bg_con < 3) {
+          bg.shop_spamton_bg_con = 1;
+          aa = 1;
+        }
+      }
+      if (aa === 0 && ((button3_p() && this.talktimer > 15) || !writerExists())) {
         killWriters();
         const e = (mercy ? END_MERCY : END_HP)[this.ballooncon];
         if (e) {
@@ -589,13 +722,19 @@ export class SpamtonNeoEnemy extends MonsterParent {
           msgset(0, s);
           this.ballooncon = this.ballooncon >= 13 ? 0 : this.ballooncon + 1;
           this.balloonend = this.ballooncon === 0 ? 1 : 0;
-          for (const k of ['shocktimer', 'hurttimer2', 'partmode', 'shockthreshold', 'headendcon']) if (o[k] !== undefined) this[k] = o[k];
-          if (o.smoke) snd_play('snd_damage');
+          for (const k of ['shocktimer', 'hurttimer2', 'partmode', 'shockthreshold', 'headendcon', 'dontchangepose', 'smokethreshold', 'dancealtcon']) if (o[k] !== undefined) this[k] = o[k];
+          if (o.smoke) {
+            snd_play('snd_damage');
+            for (let k = 0; k < 6; k++) this.smoke(random_range(2, 10), random_range(-1, -8));
+          }
           if (o.bg !== undefined) this.targetbgspeed = o.bg;
           if (o.track !== undefined) for (const b of instancesOf('obj_ch2_sceneex2')) b.trackspeed = o.track;
           if (o.overpower !== undefined) {
-            if (!this.overpower) this.overpower = snd_loop('snd_sneo_overpower');
-            snd_pitch(this.overpower, o.overpower);
+            if (!this.overpower) {
+              snd_play('snd_sneo_overpower'); // the GML plays it once and also loops it
+              this.overpower = snd_loop('snd_sneo_overpower');
+            }
+            snd_pitch('snd_sneo_overpower', o.overpower);
           }
           if (o.happy) {
             global.currentsong ??= [];
@@ -612,6 +751,10 @@ export class SpamtonNeoEnemy extends MonsterParent {
         this.alarm[6] = 1;
       }
     }
+    if (this.endcon === 2 && mercy && this.ballooncon === 13) {
+      this.siner += 2;
+      for (let i = 0; i < 8; i++) this.partsiner[i] += 0.6;
+    }
     for (const b of instancesOf('obj_ch2_sceneex2')) {
       if (this.endcon < 2 || this.endcon > 3) break;
       b.trackspeed = lerp(b.trackspeed, this.targetbgspeed * 6, 0.1);
@@ -622,10 +765,11 @@ export class SpamtonNeoEnemy extends MonsterParent {
       if ((button3_p() && this.talktimer > 15) || !writerExists()) {
         this.endtimer += 1;
         if (!mercy) {
-          if (this.endtimer <= 90 && this.overpower) snd_pitch(this.overpower, lerp(1.3, 2, this.endtimer / 90));
+          if (this.endtimer <= 90) snd_pitch('snd_sneo_overpower', lerp(1.3, 2, this.endtimer / 90));
           if (this.endtimer === 120) { this.violentendflash = 1; this.endtimer = 140; }
           if (this.endtimer === 151) {
-            if (this.overpower) snd_stop(this.overpower);
+            snd_stop('snd_sneo_overpower');
+            for (const a of instancesOf('obj_afterimage_grow')) instance_destroy(a);
             snd_play('snd_explosion');
             this.white = this.flashRect(0xffffff, 0);
           }
@@ -638,12 +782,34 @@ export class SpamtonNeoEnemy extends MonsterParent {
             snd_free(global.currentsong?.[0]);
             snd_play('snd_noise');
             snd_play('snd_damage');
+            const bg = first('obj_ch2_sceneex2');
+            this.dim = this.flashRect(0, bg ? bg.depth - 1 : 0);
+            this.dim.image_alpha = 0.5;
+            // The last wire snaps.
+            const p = this.partx, q = this.party, po = this.partxoff, qo = this.partyoff;
+            const vine = instance_create(this.x, this.y, 'obj_sneo_vine_cut');
+            vine.x1 = this.x + p[4] + po[4] / 1.2 + 20 + Math.sin(this.partsiner[4] / 25) * 1.8;
+            vine.x2 = this.x + p[4] + po[4] / 1.5 + 32;
+            vine.y1 = this.y + q[4] - 10 + qo[4];
+            vine.y2 = -400;
+            vine.depth = this.depth + 1;
+            vine.vineid = 4;
+            instance_create(this.x + p[4] + po[4] / 1.2 + 16, this.y - 35, 'obj_sneo_vine_weak').depth = this.depth - 5;
             this.lastwirecon = 3;
             this.partmode = 99;
-            for (const b of instancesOf('obj_ch2_sceneex2')) { b.cityscape_speed_max = 0; b.trackspeed = 0; }
+            for (const b of instancesOf('obj_ch2_sceneex2')) { b.cityscape_speed_max = 0; b.cityscape_speed = 0; b.trackspeed = 0; }
           }
-          if (this.endtimer === 91) { this.black = this.flashRect(0, -1); this.black.image_alpha = 1; }
-          if (this.endtimer === 330) this.finish();
+          if (this.endtimer === 91) {
+            this.depth = -99999;
+            this.black = this.flashRect(0, 0);
+            this.black.image_alpha = 1;
+            this.partmode = 43;
+          }
+          if (this.endtimer === 330) {
+            this.black2 = this.flashRect(0, -999999);
+            this.black2.image_alpha = 1;
+          }
+          if (this.endtimer === 450) this.finish();
         }
       }
       if (this.ballooncon === 0 && this.endtimer === 0) {
@@ -759,6 +925,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
       return false;
     }
     if (pm === 36) return this.dancePose(i);
+    if (pm === 43) { if (i === 0) this.fallPose(); return false; }
     if (pm === 40) return this.shockPose(i);
     return false;
   }
@@ -850,6 +1017,103 @@ export class SpamtonNeoEnemy extends MonsterParent {
     }
     return false;
   }
+  // Draw_0 after each part's pose: the hurt shake, the freeze when his HP runs out, the ending
+  // heads (headendcon), and the BIG SHOT penalty's red, honking, swelling head (funnycheat > 5).
+  postPose(i) {
+    const m = this.myself;
+    let shakevar = 0;
+    if (i === 0) {
+      if (this.hurttimer2 > 0) {
+        this.hurttimer2 -= 1;
+        if (this.hurttimer2 === 1 && this.endcon === 0) { this.shockthreshold = 10; this.partmode = 1; }
+      }
+      if (this.didwejustdie === 0 && i_ex('obj_battlecontroller') && global.monsterhp[m] <= 0) {
+        this.partmode = 99;
+        this.dontchangepose = 1;
+      }
+    }
+    if (this.hurttimer2 > 0) shakevar = random(this.hurttimer2) / 2 - this.hurttimer2 / 4;
+    if (this.headendcon === 1) {
+      this.partrot[5] = -37 + Math.sin(this.partsiner[4] / 16);
+      this.partframe[5] = 1;
+      this.partsprite[5] = 'spr_sneo_head';
+    }
+    if (this.headendcon === 2) {
+      this.partrot[5] = 15 + Math.sin(this.partsiner[4] / 16);
+      this.partsprite[5] = 'spr_sneo_head_sad';
+    }
+    if (this.headendcon === 3) this.partsprite[5] = 'spr_sneo_head';
+    if (i === 5 && i_ex('obj_pipis_destroy_fx')) this.partrot[5] -= random(60);
+    if (i === 5 && this.headforceframe !== -1) this.partframe[5] = this.headforceframe;
+    if (this.funnycheat > 5) {
+      if (this.funnycheattimer < 28) {
+        this.funnycheattimer += 0.125;
+        this.partblend[5] = merge_color(0xffffff, 0xff0000, this.funnycheattimer / 30);
+        if (this.funnycheattimer === 24) {
+          snd_play('snd_carhonk');
+          this.funnycheattimer3 += 1;
+        }
+      }
+      if (this.funnycheattimer3 > 0 && this.funnycheattimer3 < 33 && i === 5) {
+        const t3 = (this.funnycheattimer3 += 1);
+        if (t3 > 0 && t3 < 6) this.headexpand = lerp(this.headexpand, 2, t3 / 6);
+        if (t3 >= 8 && t3 < 16) this.headexpand = lerp(this.headexpand, 0, (t3 - 8) / 8);
+        if (t3 >= 16 && t3 < 22) this.headexpand = lerp(this.headexpand, 2, (t3 - 16) / 6);
+        if (t3 >= 24 && t3 < 32) this.headexpand = lerp(this.headexpand, 0, (t3 - 24) / 8);
+        if ((t3 >= 4 && t3 <= 10) || (t3 >= 20 && t3 <= 26)) shakevar = -12 + random(24);
+      }
+      this.funnycheattimer2 += 1;
+      if (this.funnycheattimer2 >= 10 && this.image_alpha > 0.6) {
+        this.smoke(random_range(2, 8), random_range(-1, -2));
+        this.funnycheattimer2 = 0;
+      }
+    }
+    return shakevar;
+  }
+  // A puff of obj_afterimage_grow cake smoke from his chest, shown from the next frame.
+  smoke(hspeed, vspeed) {
+    const smokey = instance_create(this.x + 50, this.y + 80, 'obj_afterimage_grow');
+    smokey.visible = false;
+    smokey.showNextFrame = 1;
+    smokey.depth = this.depth + 10;
+    smokey.image_alpha = 2.5;
+    smokey.sprite_index = 'spr_cakesmoke';
+    smokey.hspeed = hspeed;
+    smokey.gravity = -0.5;
+    smokey.friction = 0.2;
+    smokey.vspeed = vspeed;
+    return smokey;
+  }
+  // partmode 43 (the Friendship ending): he drops into the dark and lands with a shake.
+  fallPose() {
+    const pr = this.partrot, px = this.partx, py = this.party;
+    let fallen = 0;
+    this.falltimer += 1;
+    if (this.y < cameray() + 200) {
+      this.fallshake = 10;
+      this.fakegrav = clamp(this.fakegrav + (0.5 + this.fakegrav / 10), 0, 16.5);
+      this.y += this.fakegrav;
+    } else fallen = 1;
+    this.partframe[5] = 7;
+    const g = this.fakegrav;
+    const set = (k, r, x, y) => { pr[k] = r; if (x !== null) px[k] = x; py[k] = y; };
+    set(1, -g * 6, g * 2, g * 1.5);
+    set(6, -g * 6, g * 0.6, g * 2);
+    set(2, -g * 6, -g * 1.6, -g * 0.65);
+    set(3, -g * 6, -g * 2.5, -g * 0.15);
+    set(4, -g * 6.25, g * 2, g / 1.5);
+    set(5, -g * 8, g * 1.8, g * 2);
+    set(0, -g * 4, null, g * 3);
+    set(7, -g * 4, null, g * 3);
+    if (fallen !== 0) {
+      if (this.fallshake === 10) snd_play('snd_closet_impact');
+      for (let ii = 0; ii < 7; ii++) {
+        py[ii] += random_range(-this.fallshake, this.fallshake);
+        px[ii] += random_range(-this.fallshake, this.fallshake);
+      }
+      if (this.fallshake > 0) this.fallshake -= 1;
+    }
+  }
   // partmode 40: shocked (hit by FIGHT, the HP ending): parts jitter, smoke and flash.
   shockPose(i) {
     const f = this.f, pr = this.partrot, ps = this.partsiner;
@@ -860,14 +1124,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     if (((this.shockthreshold <= 5 && this.hurttimer2 === 0) || this.smokethreshold > 1) && i === 0) {
       this.smoketimer += 1;
       if (this.smoketimer >= this.smokethreshold) {
-        const smokey = instance_create(this.x + 50, this.y + 80, 'obj_afterimage_grow');
-        smokey.depth = this.depth + 10;
-        smokey.image_alpha = 2.5;
-        smokey.sprite_index = 'spr_cakesmoke';
-        smokey.hspeed = 2 + random(6);
-        smokey.gravity = -0.5;
-        smokey.friction = 0.2;
-        smokey.vspeed = -1 - random(1);
+        this.smoke(random_range(2, 8), random_range(-1, -2));
         this.smoketimer = 0;
       }
     }
@@ -906,17 +1163,37 @@ export class SpamtonNeoEnemy extends MonsterParent {
       this.singleshotmercy = 0;
     }
     if (global.fighting === 1 && this.prevmercy !== global.mercymod[m]) {
+      // Every 2% of mercy snaps one front wire (obj_sneo_vine_cut); a back wire then slides over to
+      // replace it (obj_sneo_vine_transition) while any are left.
       const gained = global.mercymod[m] - this.prevmercy;
-      let cut = false;
       for (let k = 0; k < gained; k++) {
         this.prevmercy += 1;
         if (this.prevmercy % 2 !== 0) continue;
-        const left = [0, 1, 2, 3, 4, 5].filter(i => this.partvisible[i] === 1);
-        if (left.length === 0) { this.vinebgcount -= 1; continue; }
-        this.partvisible[left[irandom(left.length - 1)]] = 0;
-        cut = true;
+        let c = irandom(5);
+        for (let tries = 0; tries < 6; tries++, c = (c + 1) % 6) {
+          if (this.partvisible[c] !== 1) continue;
+          this.partvisible[c] = 0;
+          const vine = instance_create(this.x, this.y, 'obj_sneo_vine_cut');
+          vine.x1 = this.x + this.partx[c] + this.partxoff[c] / 1.2 + c * 5 + Math.sin(this.partsiner[c] / 30) * 2;
+          vine.x2 = this.x + this.partx[c] + this.partxoff[c] / 1.5 + c * 8;
+          vine.y1 = this.y + this.party[c] - 10 + this.partyoff[c];
+          vine.y2 = -400;
+          vine.depth = this.depth + 1;
+          vine.vineid = c;
+          const vfx = instance_create(this.x + this.partx[c] + this.partxoff[c] / 1.2 + c * 5, this.y - 20, 'obj_sneo_vine_weak');
+          vfx.depth = this.depth - 5;
+          if (!snd_is_playing('snd_damage')) snd_play('snd_damage');
+          this.vinebgcount -= 1;
+          break;
+        }
       }
-      if (cut) snd_play('snd_damage');
+      if (this.vinebgcount > -2) {
+        for (let i = 0; i < 6; i++) {
+          if (this.partvisible[i] !== 0) continue;
+          this.vineid = i;
+          instance_create(this.x, this.y, 'obj_sneo_vine_transition');
+        }
+      }
       this.weakentimer = 1;
       this.weakenshakeamount = 10;
     }
@@ -926,38 +1203,66 @@ export class SpamtonNeoEnemy extends MonsterParent {
     const f = this.f, m = this.myself;
     if (this.image_alpha < 1 && !i_ex('obj_sneo_phonecall')) this.image_alpha += 0.1;
     if (this.state === 0) this.fsiner += 1;
-    // Wires: thin ones behind him (cut away as mercy rises, gone above 89%), the body's, one per part.
+    // Wires (Draw_0): 18 thin ones behind him (hidden above 89% mercy), the last wire, one per part.
+    // A cut front wire is replaced by a back one (obj_sneo_vine_cut / obj_sneo_vine_transition).
     const mercy = global.mercymod?.[m] ?? 0;
-    const shownBack = mercy > 89 ? 0 : Math.max(0, 18 - Math.floor(mercy / 5));
-    draw_set_color(make_color_rgb(0, 51, 0));
+    const hidebgvines = mercy > 89 ? 1 : 0;
+    const vef = this.violentendflash;
+    const wa = first('obj_sneo_bulletcontroller')?.type === 8.5 ? this.image_alpha : 1;
+    const wire = (x1, y1, x2, y2, w, col) => {
+      draw_set_color(col);
+      draw_set_alpha(wa);
+      draw_line_width(x1, y1, x2, y2, w);
+      if (vef > 0) {
+        draw_set_color(0xffffff);
+        draw_set_alpha(vef / 10);
+        draw_line_width(x1, y1, x2, y2, w);
+      }
+      draw_set_alpha(1);
+    };
+    const dark = make_color_rgb(0, 51, 0), green = bgr(32768);
+    let bgvinecount = 0;
     for (let ii = 0; ii < 18; ii++) {
+      if (this.partvisible_back[ii] === 1) bgvinecount += 1;
+      if (hidebgvines) continue;
+      if (this.partmode !== 34) this.heartattackoffsetx = 0;
       this.partsiner_back[ii] += 0.5;
-      if (ii >= shownBack) continue;
+      if (this.partvisible_back[ii] !== 1) continue;
       const x0 = this.x + this.partxoff_back[ii] + (this.heartattackoffsetx || 0);
-      draw_line_width(x0 + Math.sin(this.partsiner_back[ii] / 30) * 2, this.y + this.partyoff_back[ii], x0, -400, 1);
+      wire(x0 + Math.sin(this.partsiner_back[ii] / 30) * 2, this.y + this.partyoff_back[ii], x0, -400, 1, dark);
     }
     if (this.weakentimer > 0) {
       this.weakentimer += 1;
       if (this.weakenshakeamount > 0) this.weakenshakeamount -= 0.5;
     }
     const px = this.partx, py = this.party, pxo = this.partxoff, pyo = this.partyoff, ps = this.partsiner;
-    if (this.lastwirecon < 3) {
-      draw_line_width(this.x + px[4] + pxo[4] / 1.2 + 20 + Math.sin(ps[4] / 25) * 1.8, this.y + py[4] - 10 + pyo[4], this.x + px[4] + pxo[4] / 1.5 + 32, -400, 1);
+    const lx1 = this.x + px[4] + pxo[4] / 1.2 + 20 + Math.sin(ps[4] / 25) * 1.8, ly1 = this.y + py[4] - 10 + pyo[4];
+    const lx2 = this.x + px[4] + pxo[4] / 1.5 + 32;
+    if (this.lastwirecon === 0 || this.lastwirecon === 1) wire(lx1, ly1, lx2, -400, 1, dark);
+    if (this.endcon === 1 && this.lastwirecon === 0) this.lastwirecon = 1;
+    if (this.lastwirecon === 1) {
+      this.lastwiretimer += 1;
+      if (this.lastwiretimer === 30) this.lastwirecon = 2;
     }
-    draw_set_color(bgr(0x008000));
+    if (this.lastwirecon === 1 || this.lastwirecon === 2) {
+      draw_set_alpha(this.lastwiretimer / 30);
+      draw_set_color(green);
+      draw_line_width(lx1, ly1, lx2, -400, 1 + this.lastwiretimer / 30);
+      draw_set_alpha(1);
+    }
     for (let i = 0; i < 6; i++) {
       if (this.partvisible[i] !== 1) continue;
-      draw_line_width(this.x + px[i] + pxo[i] / 1.2 + i * 5 + Math.sin(ps[i] / 30) * 2, this.y + py[i] - 10 + pyo[i], this.x + px[i] + pxo[i] / 1.5 + i * 8, -400, 2);
+      wire(this.x + px[i] + pxo[i] / 1.2 + i * 5 + Math.sin(ps[i] / 30) * 2, this.y + py[i] - 10 + pyo[i], this.x + px[i] + pxo[i] / 1.5 + i * 8, -400, 2, green);
+    }
+    if (i_ex('obj_battlecontroller') && mercy > 89 && bgvinecount > 0 && !i_ex('obj_sneo_vine_transition') && !i_ex('obj_sneo_vine_cut')) {
+      for (let i = 0; i < 6; i++) {
+        if (this.partvisible[i] !== 0) continue;
+        this.vineid = i;
+        instance_create(this.x, this.y, 'obj_sneo_vine_transition');
+      }
     }
     draw_set_alpha(1);
     this.shocker -= 1 * f;
-    let shakevar = 0;
-    if (this.hurttimer2 > 0) {
-      this.hurttimer2 -= 1;
-      if (this.hurttimer2 === 1 && this.endcon === 0) { this.shockthreshold = 10; this.partmode = 1; }
-    }
-    if (this.hurttimer2 > 0) shakevar = random(this.hurttimer2) / 2 - this.hurttimer2 / 4;
-    if (this.state === 3) shakevar += this.shakex;
     // Body parts: Draw_0's poses (attack modules add theirs through POSES / POSE_BEFORE / POSE_AFTER).
     if (this.partmode === 10) this.partmode = 9;
     if (this.partmode !== 34) this.heartattackoffsetx = 0;
@@ -965,11 +1270,14 @@ export class SpamtonNeoEnemy extends MonsterParent {
     for (let i = 0; i < 8; i++) {
       const hook = POSES[this.partmode];
       if (hook ? hook(this, i) === true : this.builtinPose(i) === true) continue;
-      const spr = i === 5 && this.headendcon === 2 ? 'spr_sneo_head_sad' : this.partsprite[i];
+      let shakevar = this.postPose(i);
+      if (this.state === 3) shakevar += this.shakex;
+      const spr = this.partsprite[i];
       const fr = Math.floor(this.partframe[i]);
-      const dx = this.x + px[i] * this.facing + pxo[i] * this.facing + shakevar, dy = this.y + py[i] + pyo[i] - shakevar;
-      const sc = 2 + (i === 5 ? this.headsize : 0);
-      draw_sprite_ext(spr, fr, dx, dy, sc * this.facing, sc, this.partrot[i] * this.facing, this.partblend[i], this.image_alpha);
+      const lastxoff = this.facing === -1 ? 110 : 0;
+      const dx = this.x + px[i] * this.facing + pxo[i] * this.facing + lastxoff + shakevar, dy = this.y + py[i] + pyo[i] - shakevar;
+      const sc = 2 + (i === 5 ? this.headsize : 0), expand = i === 5 ? this.headexpand : 0;
+      draw_sprite_ext(spr, fr, dx, dy, sc * this.facing + expand, sc + expand, this.partrot[i] * this.facing, this.partblend[i], this.image_alpha);
       const flashA = this.flash === 1 ? -Math.cos(this.fsiner / 5) * 0.4 + 0.6 : this.violentendflash > 0 ? this.violentendflash / 10 : 0;
       if (flashA > 0) {
         d3d_set_fog(true, 0xffffff);
@@ -1046,6 +1354,8 @@ class SceneEx2 extends Instance {
     this.cityscape_speed = 0;
     this.cityscape_speed_max = 5;
     this.cityscape_alpha = 0;
+    this.shop_spamton_bg_con = 0; // the mercy ending's flash to Spamton's shop background
+    this.shop_spamton_bg_timer = 0;
     this.image_alpha = 1;
     for (let i = 0; i < 3; i++) {
       const c = instance_create(0, -100, 'o_coaster_hero_sneo');
@@ -1064,6 +1374,26 @@ class SceneEx2 extends Instance {
       let ox = (this.cityscape_speed * k) % w;
       if (ox > 0) ox -= w;
       for (let x = ox; x < 640; x += w) draw_sprite_ext(spr, 0, cx + x, cy, 2, 2, 0, 0xffffff, this.cityscape_alpha);
+    }
+    if (this.shop_spamton_bg_con > 1) {
+      let ox = this.cityscape_speed % 396;
+      if (ox > 0) ox -= 396;
+      for (let x = ox; x < 640; x += 396) draw_sprite_ext('spr_shop_spamton_bg_battle', 0, cx + x, cy, 1.6708, 1.195, 0, 0xffffff, this.cityscape_alpha);
+    }
+    if (this.shop_spamton_bg_con === 1 && !i_ex('obj_writer') && !i_ex('obj_battleblcon')) {
+      this.shop_spamton_bg_timer += 1;
+      if (this.shop_spamton_bg_timer === 1) snd_play('snd_petrify');
+      if (this.shop_spamton_bg_timer === 23) this.shop_spamton_bg_con = 2;
+    }
+    if (this.shop_spamton_bg_con === 2) {
+      this.shop_spamton_bg_timer -= 1;
+      if (this.shop_spamton_bg_timer === 0) {
+        this.shop_spamton_bg_con = 3;
+        for (const e of instancesOf('obj_spamton_neo_enemy')) e.targetbgspeed = 5;
+      }
+    }
+    if (this.shop_spamton_bg_con > 0 && this.shop_spamton_bg_con < 3) {
+      draw_sprite_ext('spr_pixel_white', 0, cx, cy - 2, 640, 98, 0, 0xffffff, this.shop_spamton_bg_timer / 20);
     }
     this.trackx += this.trackspeed;
     if (this.trackx + 640 < cx) this.trackx += 640;

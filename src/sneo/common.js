@@ -13,8 +13,8 @@ import {
   collision_rectangle, d3d_set_fog, draw_set_blend_mode, gpu_get_blendmode, sprite_get_width, sprite_get_height,
   sprite_get_xoffset, sprite_get_yoffset, draw_triangle_color, draw_circle, draw_get_alpha, merge_color, random, S,
   defineScript,
-} from '../runtime/gm.js?v=20261106142557';
-import { snd_play, snd_volume, snd_pitch } from '../runtime/audio.js?v=20261106142557';
+} from '../runtime/gm.js?v=20261106144300';
+import { snd_play, snd_volume, snd_pitch } from '../runtime/audio.js?v=20261106144300';
 
 export const VIEW_W = 640;
 export const VIEW_H = 480;
@@ -621,6 +621,7 @@ defineObject('obj_afterimage', Afterimage);
 
 class AfterimageGrow extends Instance {
   create() {
+    this.showNextFrame = 0; // set by the enemy's smoke: scr_script_delayed(scr_var, 1, "visible", 1)
     this.xrate = 0.2;
     this.yrate = 0.2;
     this.fade = 0.1;
@@ -628,6 +629,7 @@ class AfterimageGrow extends Instance {
     this.destroytime = -1;
   }
   step() {
+    if (this.showNextFrame) { this.visible = true; this.showNextFrame = 0; }
     if (this.target && this.target.alive) {
       this.x = this.target.x;
       this.y = this.target.y;
