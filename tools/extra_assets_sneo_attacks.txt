@@ -82,3 +82,4 @@ snd: ^snd_swallow$
 snd: ^snd_ultraswing$
 snd: ^snd_wallclaw$
 snd: ^snd_weaponpull_fast$
+spr:^spr_bullet_laser_(front|square)_sneo$

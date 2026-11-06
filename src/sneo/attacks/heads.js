@@ -3,10 +3,10 @@
 import {
   global, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, merge_color, snd_play, snd_volume, bgr, S,
-} from '../rt.js?v=20261106131511';
-import { first, camerax, cameray, scr_bullet_init, move_towards_point, scr_doom, snd_play_x, scr_afterimage } from '../common.js?v=20261106131511';
-import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106131511';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106131511';
+} from '../rt.js?v=20261106131626';
+import { first, camerax, cameray, scr_bullet_init, move_towards_point, scr_doom, snd_play_x, scr_afterimage } from '../common.js?v=20261106131626';
+import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106131626';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106131626';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 
