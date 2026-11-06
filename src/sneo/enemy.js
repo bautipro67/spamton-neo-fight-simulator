@@ -6,14 +6,14 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261106195344';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106195344';
-import { scr_bulletspawner } from './dbullet.js?v=20261106195344';
+} from './rt.js?v=20261106201714';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106201714';
+import { scr_bulletspawner } from './dbullet.js?v=20261106201714';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
-} from '../runtime/gm.js?v=20261106195344';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261106195344';
+} from '../runtime/gm.js?v=20261106201714';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261106201714';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -1417,8 +1417,18 @@ class CoasterHero extends Instance {
     // The car is drawn whether or not its hero is: Rude Buster and the spells hide the hero
     // while their own animation stands in for them.
     const h = first(HERO_OBJ[this.HeroID]);
-    this.visible = !!h;
-    if (!h) return;
+    if (!h) {
+      // The encounter intro (lerpstate 0): the car pulls out of the coaster into its battle spot
+      // while its hero jumps there, so it rides along under obj_encounterbasic's marker.
+      const m = first('obj_encounterbasic')?.c?.[this.HeroID];
+      this.visible = !!m && m.alive;
+      if (!this.visible) return;
+      this.x = m.x + CAR_DX[this.HeroID];
+      this.y = m.y + CAR_Y[this.HeroID] - global.heromakey[this.HeroID];
+      this.depth = m.depth - 1;
+      return;
+    }
+    this.visible = true;
     this.x = h.x + CAR_DX[this.HeroID];
     this.y = CAR_Y[this.HeroID];
     this.depth = [80, 75, 70][this.HeroID];

@@ -1,6 +1,6 @@
 // obj_endbattle: the party walks back to the overworld spots, then the simulator's ending screen
 // replaces the post-fight cutscene (obj_ch3_PTB02). obj_time also hands a pending game over to its screen.
-import { global, G, Instance, defineObject, S, point_direction, point_distance } from '../runtime/gm.js?v=20261106195344';
+import { global, G, Instance, defineObject, S, point_direction, point_distance } from '../runtime/gm.js?v=20261106201714';
 
 const g = global;
 
@@ -8,7 +8,7 @@ class EndBattle extends Instance {
   create() {
     this.con = 0;
     g.tension = 0;
-    const spr = ['spr_krisr_dark', 'spr_susier_dark_unhappy', 'spr_ralsei_walk_right'];
+    const spr = ['spr_krisr_dark', 'spr_susier_dark', 'spr_ralsei_walk_right']; // the followers' rsprite in Chapter 2
     this.c = [];
     for (let i = 0; i < 3; i++) {
       const m = S.scr_dark_marker(g.heromakex[i], g.heromakey[i], spr[i]);

@@ -3,4 +3,6 @@ spr:^spr_(attack_cut1|attack_shard|tensionbar_cutout|savepoint|gameoverbg)$
 spr:IMAGE_SOUL_BLUR
 spr:^spr_(battleblcon|battleblcon_long|battleblcon_.*)$
 # Chapter 2 Ralsei (no hat) battle poses: obj_heroparent Create
-spr:^spr_ralsei_(idle|defend|hurt_fixed|attackready|attack|item|itemready|spellready|spell|defeat|victory|actready|act|walk_right)$
+spr:^spr_ralsei_(battleintro|idle|defend|hurt_fixed|attackready|attack|item|itemready|spellready|spell|defeat|victory|actready|act|walk_right)$
+# Chapter 2 battle intro: Susie jumps in off the wall
+spr:^spr_susier_wall$

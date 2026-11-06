@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261106195344';
-import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261106195344';
-import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261106195344';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261106195344';
-import { registerBackground } from './misc.js?v=20261106195344';
+} from '../runtime/gm.js?v=20261106201714';
+import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261106201714';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261106201714';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261106201714';
+import { registerBackground } from './misc.js?v=20261106201714';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -397,7 +397,10 @@ defineScript('scr_monster_makeinstance', (m) => {
   g.monster[m] = 1;
   const old = g.monsterinstance[m];
   if (old && old.alive) old.alive = false;
-  const inst = instance_create(g.monstermakex[m], g.monstermakey[m], g.monsterinstancetype[m]);
+  // scr_battle(61, 1, sneo, ...) hands the battle the Spamton NEO already on screen: reuse it.
+  const waiting = G.instances.find(o => o.alive && o.waitingForBattle && o.constructor.objName === g.monsterinstancetype[m]);
+  if (waiting) waiting.waitingForBattle = false;
+  const inst = waiting || instance_create(g.monstermakex[m], g.monstermakey[m], g.monsterinstancetype[m]);
   g.monsterinstance[m] = inst;
   inst.myself = m;
   if (inst.user12) inst.user12();
@@ -478,8 +481,9 @@ class ObjTime extends Instance {
 }
 defineObject('obj_time', ObjTime);
 
-// Overworld spots the party stands on when the battle starts (they jump into battle positions).
-const INTRO_START = [[150, 130], [112, 168], [92, 214]];
+// Where the party sits when the battle starts: obj_ch2_sceneex2 puts the coasters at
+// (1721, 60), (1718, 125) and (1727, 215) with Ralsei's character_offset_x -10.
+const INTRO_START = [[81, 60], [78, 125], [77, 210]]; // the coasters' seats (camera at x 1640)
 
 // Starts a fresh Spamton NEO fight: opts.intro = false skips the encounter transition.
 export function startBattle(opts = {}) {
@@ -495,6 +499,9 @@ export function startBattle(opts = {}) {
     global.tempflag[37] = G.sneoGameovers || 0; // game overs this session (obj_spamton_neo_enemy Other_14)
   }
   instance_create(0, 0, 'obj_time');
+  // The party is still riding the coaster through the city when the battle starts, so the
+  // backdrop (and the cars) are there from the first frame of the intro.
+  instance_create(0, 0, 'obj_ch2_sceneex2').cityscape_alpha = 1;
   if (G.settings?.simplify) global.flag[8] = 1;
   global.introx = INTRO_START.map(p => p[0]);
   global.introy = INTRO_START.map(p => p[1]);
@@ -502,7 +509,13 @@ export function startBattle(opts = {}) {
     S.scr_encountersetup(global.encounterno);
     instance_create(0, 0, 'obj_battlecontroller');
   } else {
-    instance_create(0, 0, 'obj_encounterbasic');
+    const enc = instance_create(0, 0, 'obj_encounterbasic');
+    // obj_ch2_sceneex2 starts the battle with the party already in their cars: counttimer = 9
+    // leaves one frame of the jump before the attack / spin poses, and Spamton NEO is already there.
+    enc.counttimer = 9;
+    const sneo = instance_create(global.monstermakex[0], global.monstermakey[0], global.monsterinstancetype[0]);
+    sneo.myself = 0;
+    sneo.waitingForBattle = true;
   }
   G.battleStarted = G.frame;
 }
