@@ -1,0 +1,6 @@
+# Decompiled game code, catalogs and scratch dumps: local reference only, never publish
+research/
+research_dump.log
+__pycache__/
+.claude/
+promo/

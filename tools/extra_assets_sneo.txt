@@ -1,0 +1,13 @@
+# Extra assets for Spamton NEO and the yellow SOUL (spr:/snd:/font:/text: per line)
+spr: ^spr_sneo_
+spr: ^spr_sneoact_
+spr: ^spr_neo_
+spr: ^spr_yheart
+spr: ^spr_(yellowheart|heart|grazeappear_yellow|supercharge_end|pipis_egg|pipis_egg_break|pipis_egg_piece|spamton_idle|spamton_hurt|cakesmoke|bhero|mettaton_bomb1)$
+spr: ^spr_(dodgeheart|dodgeheartmask|hiddenheart|battlebg_stretch|pixel_white|whitepx|whitepixel|smallbullet|nothing|sneo_bigcircle)$
+spr: ^spr_(battlebg_.*|battleback.*|bg_grid.*)$
+# Chapter 2 Ralsei (with his hat) and party extras
+spr: ^spr_ralseib_
+spr: ^spr_(ralsei_hurt|ralseir|ralsei_walk_right|ralsei_walk_right_unhappy|ralsei_defend_peek|susieb_defeat|susie_defend_peek|face_r_dark|face_r_nohat|face_susie_alt|susier_dark_unhappy|kris_sword_jump_down)$
+snd: ^snd_(txtspam2|txtspam|chargeshot_charge|chargeshot_fire|heartshot_dr|heartshot_dr_b|sneo_overpower|sneo_laugh_long|spamton_laugh|stardrop|explosion|noise|cardrive|bomb|damage|bell|boost|mercyadd|error|weaponpull_fast|escaped|petrify)$
+spr: ^bg_dw_mansion_basement_cityscape_(background|midground|foreground)$
