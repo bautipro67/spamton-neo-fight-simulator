@@ -3,10 +3,10 @@
 import {
   global, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, merge_color, snd_play, snd_volume, bgr, S,
-} from '../rt.js?v=20261106022233';
-import { first, camerax, cameray, scr_bullet_init, move_towards_point, scr_doom, snd_play_x, scr_afterimage } from '../common.js?v=20261106022233';
-import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106022233';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106022233';
+} from '../rt.js?v=20261106131511';
+import { first, camerax, cameray, scr_bullet_init, move_towards_point, scr_doom, snd_play_x, scr_afterimage } from '../common.js?v=20261106131511';
+import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106131511';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106131511';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 
@@ -39,7 +39,14 @@ export class SneoBulletController extends BulletGenParent {
       this.init = 1;
     }
     this.btimer += 1;
-    if (this.type === 0) {
+    // type 0 here; the other types are added by their attack modules as typeN / typeN_5 methods.
+    const fn = this['type' + String(this.type).replace('.', '_')];
+    if (fn) fn.call(this);
+  }
+  // FLYING HEADS
+  type0() {
+    const s = this.sneo;
+    {
       if (this.init === 1) {
         this.btimer = 0;
         instance_create(0, 0, 'obj_sneo_guymaker');
@@ -316,4 +323,37 @@ class CrewDissolve extends BulletParent {
   }
 }
 defineObject('obj_sneo_crew_dissolve', CrewDissolve);
+
+// obj_spamtonshot: the arm-cannon shot of his dance (partmode 36, Flying Heads II). Its Step sets
+// dontexplode = 1 before the burst check, so it never bursts: it flies at the SOUL, pulsing.
+class SpamtonShot extends BasicBulletSneo {
+  constructor() {
+    super();
+    this.sprite_index = 'spr_sneo_bullet1';
+  }
+  create() {
+    super.create();
+    this.con = 0;
+    this.siner = 0;
+    this.fluffyguarddestroysthis = 0;
+    const h = first('obj_heart');
+    const tx = h ? h.x : camerax() + 320, ty = h ? h.y : cameray() + 120;
+    move_towards_point(this, tx, ty, 5);
+    this.angle_speed = 0;
+    this.grazepoints = 4;
+    const bc = first('obj_sneo_bulletcontroller');
+    if (bc) this.target = bc.target;
+  }
+  step() {
+    const s = sneo();
+    if (s) this.damage = global.monsterat[s.myself] * 5;
+    if (global.turntimer < 1) { instance_destroy(this); return; }
+    const h = first('obj_heart');
+    if (h) this.depth = this.y > cameray() + 280 ? h.depth + 100 : h.depth + 2;
+    this.siner += 2;
+    this.image_xscale = this.image_yscale = 0.5 + Math.sin(this.siner / 4) * 0.2;
+    if (this.x >= 740 || this.x <= -100 || this.y >= 580 || this.y <= -100) instance_destroy(this);
+  }
+}
+defineObject('obj_spamtonshot', SpamtonShot);
 export { instancesOf, snd_play };

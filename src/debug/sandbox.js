@@ -8,34 +8,35 @@ import {
   instancesOf, event_user, choose, keyboard_check, keyboard_check_pressed, random_set_seed, round, S,
   draw_set_font, draw_set_halign, draw_set_color, draw_set_alpha, draw_rectangle, draw_text, draw_sprite_ext,
   fa_left, fa_center, merge_color, button1_p, vk, draw_self,
-} from '../runtime/gm.js?v=20261106022233';
-import { snd_play, snd_init, mus_loop_ext, mus_stop, snd_stop } from '../runtime/audio.js?v=20261106022233';
-import { audioReady, assets } from '../runtime/assets.js?v=20261106022233';
-import { gotoRoom } from '../screens/common.js?v=20261106022233';
-import { getBest, saveBest } from '../settings.js?v=20261106022233';
-import { drawSoulHat } from '../hats.js?v=20261106022233';
-import { tagParent } from '../sneo/common.js?v=20261106022233';
+} from '../runtime/gm.js?v=20261106131511';
+import { snd_play, snd_init, mus_loop_ext, mus_stop, snd_stop } from '../runtime/audio.js?v=20261106131511';
+import { audioReady, assets } from '../runtime/assets.js?v=20261106131511';
+import { gotoRoom } from '../screens/common.js?v=20261106131511';
+import { getBest, saveBest } from '../settings.js?v=20261106131511';
+import { drawSoulHat } from '../hats.js?v=20261106131511';
+import { tagParent } from '../sneo/common.js?v=20261106131511';
 
 // Spamton NEO's turns in fight order: [rr, difficulty, name, object the attack needs].
 // Only the attacks whose objects are ported are listed (ATTACKS).
 const FIGHT_ORDER = [
   [0, 1, 'Flying heads', 'obj_sneo_guymaker'],
   [6, 0, 'RECREW columns', 'obj_sneo_wall_controller_new'],
-  [2, 0, 'Heart attack', 'obj_sneo_heartattack'],
+  [2, 0, 'Heart attack', 'obj_sneo_wireheart'],
   [8, 0, 'Phone call', 'obj_sneo_phonecall'],
   [8.5, 0, 'Phone hands', 'obj_sneo_phonehand_master'],
   [7, 0, 'Face attack', 'obj_sneo_faceattack'],
-  [2, 2, 'Heart attack II', 'obj_sneo_heartattack'],
+  [2, 2, 'Heart attack II', 'obj_sneo_wireheart'],
   [0, 3, 'Flying heads II', 'obj_sneo_guymaker'],
   [8.5, 1, 'Phone hands II', 'obj_sneo_phonehand_master'],
   [8, 1, 'Phone call II', 'obj_sneo_phonecall'],
   [6, 1, 'RECREW columns II', 'obj_sneo_wall_controller_new'],
+  [2, 1, 'Heart attack III', 'obj_sneo_wireheart'],
   [8, 3, 'Phone call III', 'obj_sneo_phonecall'],
   [9, 0, 'NEO finale', 'obj_sneo_final_forme'],
   // Not used in the normal route's schedule.
   [0, 2, 'Flying heads + arm laser (unused)', 'obj_sneo_biglaser'],
 ];
-const UNUSED_FROM = 13;
+const UNUSED_FROM = 14;
 export const ATTACKS = FIGHT_ORDER.filter(a => objectExists(a[3]));
 const KEY_LBRACKET = 219, KEY_RBRACKET = 221, KEY_SHIFT = 16;
 
@@ -656,4 +657,5 @@ export function startSandbox(params) {
   if (params.has('god')) ctl.god = true;
   if (params.has('music')) ctl.toggleMusic();
   window.sandbox = ctl;
+  window.SB_ATTACKS = ATTACKS; // [rr, difficulty, name, object] per index, for debugging
 }

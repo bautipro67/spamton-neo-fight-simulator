@@ -9,7 +9,7 @@ Play the Spamton NEO boss fight from **DELTARUNE Chapter 2** for free in your br
 - Fight alongside Susie and Ralsei: FIGHT, ACT (Check, Snap, SnapAll), Susie's Snap / Supercharge, Ralsei's Snap / FluffyGuard, MAGIC, ITEM and DEFEND.
 - The yellow SOUL: shoot with Z, hold and release to fire a BIG SHOT. Shoot the bullets Spamton NEO throws at you.
 - The battle logic is ported from the original game's code, so it plays like the real fight.
-- Work in progress: Flying Heads is ported; Spamton NEO's other attacks are still being ported, and until then those turns play Flying Heads.
+- Every attack of his normal-route fight, in order: Flying Heads, the RECREW columns, the heart on a wire, the phone call, the phone hands, the face attack and the NEO finale.
 - **Practice mode** (Bad Time Simulator style): dodge the attacks in order; lose your HP bar and the attack restarts, survive it and you move on. Pick the starting attack and 90 / 45 / 1 HP. Scores with ranks and a saved best for full runs. Direct link: [`?practice`](https://bautipro67.github.io/spamton-neo-fight-simulator/?practice).
 - **EQUIPMENT**: pick each character's weapon and armors (any Chapter 2 gear they can use) and the items you bring into the fight.
 - **Codes**: type a secret code in the Codes box under the game to unlock extras.

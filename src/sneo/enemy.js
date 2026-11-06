@@ -6,14 +6,14 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261106022233';
-import { first, camerax, cameray, i_ex, callOr, tagParent } from './common.js?v=20261106022233';
-import { scr_bulletspawner } from './dbullet.js?v=20261106022233';
+} from './rt.js?v=20261106131511';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106131511';
+import { scr_bulletspawner } from './dbullet.js?v=20261106131511';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
-  draw_line_width, make_color_rgb,
-} from '../runtime/gm.js?v=20261106022233';
-import { snd_init, snd_loop, snd_pitch, mus_loop_ext, mus_stop } from '../runtime/audio.js?v=20261106022233';
+  draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle,
+} from '../runtime/gm.js?v=20261106131511';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop } from '../runtime/audio.js?v=20261106131511';
 
 const snd_free = s => { if (s) mus_stop(s); };
 
@@ -45,10 +45,17 @@ const writerExists = () => i_ex('obj_writer');
 const killWriters = () => { for (const w of instancesOf('obj_writer')) instance_destroy(w); };
 export const sneoEnemy = () => first('obj_spamton_neo_enemy');
 
+// Hooks for the attack modules (so they never need to edit this file):
+// - POSES[partmode](sneo, i): the Draw_0 pose code for body part i in that partmode (it runs
+//   instead of the built-in poses, before part i is drawn; return true to skip drawing the part).
+// - POSE_BEFORE[partmode](sneo) / POSE_AFTER[partmode](sneo): extra drawing before / after the parts.
+// - STEP_HOOKS: functions (sneo) run at the end of every Step.
+export const POSES = {}, POSE_BEFORE = {}, POSE_AFTER = {}, STEP_HOOKS = [];
+
 // rr (the turn's attack) -> the objects it needs. An rr counts as ported once its attack module
 // has registered them; the others fall back (see playedAttack) so every turn still plays something.
 const RR_OBJECTS = {
-  0: ['obj_sneo_guymaker'], 1: ['obj_pipis_controller'], 2: ['obj_sneo_heartattack'], 3: ['obj_pipis_controller'],
+  0: ['obj_sneo_guymaker'], 1: ['obj_pipis_controller'], 2: ['obj_sneo_wireheart'], 3: ['obj_pipis_controller'],
   6: ['obj_sneo_wall_controller_new'], 7: ['obj_sneo_faceattack'], 8: ['obj_sneo_phonecall'],
   8.5: ['obj_sneo_phonehand_master'], 9: ['obj_sneo_final_forme'],
 };
@@ -131,8 +138,11 @@ export class SpamtonNeoEnemy extends MonsterParent {
       checkcount: 0, shocker_threshold: 10, shocktimer: 0, shockthreshold: 10, hurttimer2: 0, aimmode: 0, armaim: -80,
       partmode: 1, phoneevent: 0, ballooncon: 0, balloonend: 1, talkedcon: 0, statustextorder: 0, statustextalt: 0,
       statustextalt2: 0, statustextupdate: 0, correct_answer: -1, facing: 1, rr: 0, rtimer: 0, vinex: 0,
-      violentendflash: 0, attackdebug: -1, difficultydebug: -1,
+      violentendflash: 0, attackdebug: -1, difficultydebug: -1, headsize: 1, shotanimtimer: 0, lerper: 0,
+      head_recoil_amount: 0, dance_timer: 0, shootydanceinit: 0, chargesfxtimer: 0, chargepitch: 0.1, smoketimer: 0,
+      smokethreshold: 1, dontchangepose: 0, heartattackoffsetx: 0, siner: 0,
     });
+    this.idealrot = new Array(8).fill(0);
     this.image_speed = 1 / 6;
     this.idlesprite = this.hurtsprite = this.sparedsprite = 'spr_sneo_example';
     this.custom_draw = 1;
@@ -258,11 +268,13 @@ export class SpamtonNeoEnemy extends MonsterParent {
       if (isphase('bullets') && this.attacked === 0) {
         this.rtimer += 1;
         if (this.rtimer === 15) this.launchAttack();
+        else turntimer(120);
       }
       if (i_ex('obj_returnheart') && this.statustextupdate === 0) this.statusText();
     }
     if (global.monster[m] === 1 && global.myfight === 3) this.stepActs();
     if (this.endcon >= 1) this.stepEnd();
+    for (const h of STEP_HOOKS) h(this);
   }
   // Step_0, enemytalk: the attack is chosen first, then his line for it.
   startTalk() {
@@ -342,6 +354,8 @@ export class SpamtonNeoEnemy extends MonsterParent {
   // talkedcon == 1: the balloon is done; the box (sized per attack) and the SOUL come in.
   startBullets() {
     if (this.partmode === 40) { this.partmode = 1; this.shockthreshold = 0; this.hurttimer2 = 0; }
+    this.shootydanceinit = 0;
+    this.dance_timer = 0;
     this.rtimer = 0;
     S.scr_blconskip(this, -1);
     if (!isphase('bullets')) return;
@@ -644,6 +658,209 @@ export class SpamtonNeoEnemy extends MonsterParent {
     G.sneoEnding = this.sneo_defeat_cutscene_version === 1 ? 'mercy' : 'hp';
     S.scr_wincombat();
   }
+  // Draw_0's per-part pose code: partmodes 0-20, 36 (the shooting dance) and 40 (shock).
+  // Partmodes with no code here (99, 43...) leave the parts where they are, as in the GML.
+  builtinPose(i) {
+    const f = this.f, pm = this.partmode, px = this.partx, py = this.party, ps = this.partsiner;
+    const pr = this.partrot, pf = this.partframe;
+    if (pm < 20) {
+      if (pm === 0) {
+        ps[i] = 0;
+        pf[i] = 0;
+        const [r, x, y] = i === 5 ? [30, -10, 10] : [0, 0, 0];
+        pr[i] = lerp(pr[i], r, 0.25 * f);
+        px[i] = lerp(px[i], x, 0.25 * f);
+        py[i] = lerp(py[i], y, 0.25 * f);
+        if (i === 5 && this.dead === 1) pf[i] = 3;
+        if (i !== 5) for (const a of [pr, px, py]) if (Math.abs(a[i]) < 1) a[i] = 0;
+      }
+      if (pm === 1 || pm === 3 || pm >= 5) {
+        if (pm === 1 && this.aimmode !== 0) this.aimmode = 0;
+        if ((pm === 3 || (pm >= 9 && pm <= 13)) && i === 1) {
+          const h = first('obj_heart');
+          if (this.aimmode === 2 && h && pm === 3) this.armaim = point_direction(this.x + this.partxoff[i], this.y + this.partyoff[i], h.x + 8, h.y + 8) + 90;
+          else if (this.aimmode !== 1) this.armaim = -80;
+          if (pm < 10) pr[i] = lerp(pr[i], this.armaim, 0.25 * f);
+          if (pm < 9) pf[i] = pm === 3 ? 1 : 3;
+          if (pm === 12) pf[i] = 1;
+          if (pm >= 10) pr[i] = pr[i] === this.armaim ? this.armaim + 2 : this.armaim;
+        } else if (pm >= 6 && pm < 11 && i === 1) {
+          pr[i] = lerp(pr[i], -160, 0.25 * f);
+          if (pf[i] !== 2 && pr[i] <= -90) pf[i] = 2;
+        } else {
+          if (i === 1 && (pm === 5 || pm === 1)) pf[i] = 0;
+          ps[i] += (1 + i / 5) * f;
+          pr[i] = Math.sin(ps[i] / 30) * 15;
+        }
+        if (i === 5) {
+          px[i] = lerp(px[i], 0, 0.25 * f);
+          py[i] = lerp(py[i], 0, 0.25 * f);
+          pr[i] -= 10 * f;
+          if (this.headendcon === 1) { pr[i] = -37 + Math.sin(ps[4] / 16); pf[i] = 1; }
+          else if (this.headendcon === 2) pr[i] = 15 + Math.sin(ps[4] / 16);
+          else if (pm === 5 || pm === 8 || pm === 9) { pr[i] /= 2; pr[i] += 10 * f; pf[i] = 1; }
+          else if (pm === 6 || pm === 7) { pr[i] /= 2; if (pm > 6 || pr[1] <= -120) pf[i] = 0; }
+          else if (pm === 11) pf[i] += 0.2 * f;
+          else if (pm === 12) pf[i] += 0.3 * f;
+          else pf[i] += 0.05 * f;
+          if (pf[i] >= 3) pf[i] = 0;
+          if (pf[i] >= 2) pr[i] += 20 * f;
+        }
+      }
+      if (pm === 2) {
+        ps[i] += (1 + i / 5) * f;
+        px[i] = Math.sin(ps[i] / 2 * f);
+        py[i] = Math.cos(ps[i] / 2 * f);
+        if (this.shocker < 0) {
+          pr[i] = 60 - random(120);
+          if (i === 5) { pf[i] += 1 * f; if (pf[i] >= 3) pf[i] = 0; }
+        }
+      }
+      if (pm === 4) {
+        const ideal = [-43, -180, -20, -10, -31, -60, -61, -56];
+        if (this.shotanimtimer === 0.125 * f && i === 1 && instance_exists('obj_sneo_heartattack')) this.aimmode = 0;
+        this.shotanimtimer += 0.125 * f;
+        if (this.shotanimtimer < 13) {
+          pf[5] = 2;
+          pr[i] = lerp(pr[i], ideal[i], 0.3 * f);
+          this.lerper = 0;
+        }
+        if (this.shotanimtimer >= 13) {
+          pf[5] = 1;
+          this.lerper += 0.015 * f;
+          pr[i] = lerp(pr[i], i !== 1 ? Math.sin(ps[i] / 30) * 15 : this.armaim, this.lerper);
+        }
+        if (this.shotanimtimer >= 24) { this.shotanimtimer = 0; this.partmode = 3; }
+      }
+      if (pm === 6) this.shotanimtimer = 0;
+      if (pm === 7) {
+        pr[5] += Math.sin(this.shotanimtimer / 5) * 15;
+        this.shotanimtimer += 0.2 * f;
+        if (this.shotanimtimer > 60) this.partmode = 6;
+      }
+      if (i === 5) {
+        if (pm >= 15 && pm <= 17) {
+          pf[5] = 2;
+          this.headsize = lerp(this.headsize, [0.5, 1, 1.5][pm - 15], 0.25);
+          if (pm === 17) pr[5] += random(20);
+        } else this.headsize = lerp(this.headsize, 0, 0.25);
+      }
+      return false;
+    }
+    if (pm === 36) return this.dancePose(i);
+    if (pm === 40) return this.shockPose(i);
+    return false;
+  }
+  // partmode 36: the dance (Flying Heads II and the mercy ending); in the fight he fires
+  // obj_spamtonshot at the SOUL from his arm cannon.
+  dancePose(i) {
+    const pr = this.partrot, ps = this.partsiner, ideal = this.idealrot;
+    const fastshot = 1;
+    if (this.shootydanceinit === 0) {
+      this.shootydanceinit = 1;
+      this.shootydancex = this.x;
+      this.shootydancey = this.y;
+    }
+    if (this.endcon > 0) {
+      if (this.dancealtcon === 1 || this.dancealtcon === 2) this.siner += 0.23;
+      this.x = this.xstart + Math.sin(this.siner / 20) * 10;
+      this.y = this.ystart + Math.sin(this.siner / 6) * 20;
+    } else {
+      this.x = this.shootydancex + Math.sin(this.siner / 20) * 10;
+      this.y = this.shootydancey + Math.sin(this.siner / 6) * 20;
+    }
+    this.armendx = this.x + this.partx[1] + this.partxoff[1] + lengthdir_x(this.armlength, pr[1] - 93);
+    this.armendy = this.y + this.party[1] + this.partyoff[1] + lengthdir_y(this.armlength, pr[1] - 93);
+    if (this.dance_timer === 0) ideal[5] = -15;
+    if (i !== 1 || this.endcon > 0) {
+      ps[i] += 0.1;
+      this.partx[i] = lerp(this.partx[i], 0, 0.5);
+      this.party[i] = lerp(this.party[i], 0, 0.5);
+      ideal[i] = Math.sin(ps[i] + i / 8) * 20;
+      ideal[1] = Math.sin(ps[2]) * 60;
+      ideal[2] = Math.sin(ps[2] - 0.1) * 60;
+      ideal[3] = -Math.sin(ps[2] + 0.3) * 60;
+      ideal[6] = -Math.sin(ps[2] + 0.1) * 60;
+      pr[5] = -15 - Math.abs(Math.sin(this.head_recoil_amount / 60)) * 150;
+      this.partframe[5] = 2;
+      this.head_recoil_amount = lerp(this.head_recoil_amount, 0, 0.03);
+      pr[i] = lerp(pr[i], ideal[i], 0.5);
+    }
+    if (i === 0 && this.endcon === 0) {
+      this.siner += 1.3;
+      this.dance_timer += 1;
+      const t = this.dance_timer;
+      if (t === 17 - fastshot * 10 || t === 52 - fastshot * 10) {
+        // obj_sneo_biglaser (_type 1, the charge glow) is not ported: only its charge sound plays.
+        if (this.chargeshot_sound) snd_stop(this.chargeshot_sound);
+        this.chargeshot_sound = snd_loop('snd_chargeshot_charge');
+        this.chargesfxtimer = 1;
+      }
+      const fire = dir => {
+        const shot = instance_create(this.armendx, this.armendy, 'obj_spamtonshot');
+        shot.target = this.mytarget;
+        shot.damage = this.damage;
+        this.armaim += dir;
+        this.head_recoil_amount = -170;
+        if (this.chargeshot_sound) snd_stop(this.chargeshot_sound);
+        snd_play_x('snd_chargeshot_fire', 0.6, 0.5);
+      };
+      if (t === 42 - fastshot * 10) fire(360);
+      if (t === 84 - fastshot * 20) fire(-360);
+      if (t === 85 - fastshot * 20) this.dance_timer = 3;
+      if (this.chargesfxtimer === 1) {
+        this.chargepitch = 0.1;
+        snd_pitch(this.chargeshot_sound, this.chargepitch);
+        snd_volume(this.chargeshot_sound, 0, 0);
+        snd_volume(this.chargeshot_sound, 0.8, 20);
+      }
+      if (this.chargesfxtimer > 0 && this.chargesfxtimer <= 30) {
+        this.chargesfxtimer += 1;
+        this.chargepitch += 0.03;
+        snd_pitch(this.chargeshot_sound, this.chargepitch);
+      }
+    }
+    if (i === 1 && this.endcon === 0) {
+      pr[i] = lerp(pr[i], this.armaim, 0.12);
+      this.partframe[i] = 1;
+    }
+    return false;
+  }
+  // partmode 40: shocked (hit by FIGHT, the HP ending): parts jitter, smoke and flash.
+  shockPose(i) {
+    const f = this.f, pr = this.partrot, ps = this.partsiner;
+    if (i === 0 && this.dontchangepose === 0) this.shocktimer += 1;
+    ps[i] += (1 + i / 5) * f;
+    this.partx[i] = Math.sin(ps[i] / 2 * f);
+    this.party[i] = Math.cos(ps[i] / 2 * f);
+    if (((this.shockthreshold <= 5 && this.hurttimer2 === 0) || this.smokethreshold > 1) && i === 0) {
+      this.smoketimer += 1;
+      if (this.smoketimer >= this.smokethreshold) {
+        const smokey = instance_create(this.x + 50, this.y + 80, 'obj_afterimage_grow');
+        smokey.depth = this.depth + 10;
+        smokey.image_alpha = 2.5;
+        smokey.sprite_index = 'spr_cakesmoke';
+        smokey.hspeed = 2 + random(6);
+        smokey.gravity = -0.5;
+        smokey.friction = 0.2;
+        smokey.vspeed = -1 - random(1);
+        this.smoketimer = 0;
+      }
+    }
+    if (this.shockthreshold <= 8 && this.hurttimer2 === 0 && !(global.flag?.[8] === 1)) {
+      this.fsiner = ps[i] / 8;
+      this.flash = 1;
+      this.becomeflash = 1;
+    }
+    if (global.flag?.[8] === 1) this.shockthreshold = Math.max(5, Math.min(100, this.shockthreshold));
+    if (this.shocktimer >= this.shockthreshold) {
+      pr[i] = 60 - random(120);
+      if (i === 4) pr[i] = 40 - random(80);
+      if (i === 5) { this.partframe[i] += 1 * f; if (this.partframe[i] >= 3) this.partframe[i] = 0; }
+      if (i === 7) this.shocktimer = 0;
+    }
+    return false;
+  }
   // Step_2: every 2% of mercy cuts one of his wires; ten single shots add 1% mercy.
   endStep() {
     if (this.moveTime) {
@@ -692,7 +909,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     for (let ii = 0; ii < 18; ii++) {
       this.partsiner_back[ii] += 0.5;
       if (ii >= shownBack) continue;
-      const x0 = this.x + this.partxoff_back[ii];
+      const x0 = this.x + this.partxoff_back[ii] + (this.heartattackoffsetx || 0);
       draw_line_width(x0 + Math.sin(this.partsiner_back[ii] / 30) * 2, this.y + this.partyoff_back[ii], x0, -400, 1);
     }
     if (this.weakentimer > 0) {
@@ -717,37 +934,18 @@ export class SpamtonNeoEnemy extends MonsterParent {
     }
     if (this.hurttimer2 > 0) shakevar = random(this.hurttimer2) / 2 - this.hurttimer2 / 4;
     if (this.state === 3) shakevar += this.shakex;
-    // Body parts. partmode 0 is the slumped pose; the swinging idle (partmode 1/3/5+) is used
-    // for every other pose here (the arm aims, dances and shocks are not ported yet).
+    // Body parts: Draw_0's poses (attack modules add theirs through POSES / POSE_BEFORE / POSE_AFTER).
+    if (this.partmode === 10) this.partmode = 9;
+    if (this.partmode !== 34) this.heartattackoffsetx = 0;
+    POSE_BEFORE[this.partmode]?.(this);
     for (let i = 0; i < 8; i++) {
-      if (this.partmode === 0) {
-        ps[i] = 0;
-        this.partframe[i] = 0;
-        const [r, x, y] = i === 5 ? [30, -10, 10] : [0, 0, 0];
-        this.partrot[i] = lerp(this.partrot[i], r, 0.25 * f);
-        px[i] = lerp(px[i], x, 0.25 * f);
-        py[i] = lerp(py[i], y, 0.25 * f);
-        if (i === 5 && this.dead === 1) this.partframe[i] = 3;
-      } else {
-        if (i === 1 && (this.partmode === 1 || this.partmode === 5)) this.partframe[i] = 0;
-        ps[i] += (1 + i / 5) * f * (this.partmode === 36 ? 2 : 1);
-        this.partrot[i] = Math.sin(ps[i] / 30) * 15;
-        if (i === 5) {
-          px[i] = lerp(px[i], 0, 0.25 * f);
-          py[i] = lerp(py[i], 0, 0.25 * f);
-          this.partrot[i] -= 10 * f;
-          if (this.headendcon === 1) { this.partrot[i] = -37 + Math.sin(ps[4] / 16); this.partframe[i] = 1; }
-          else if (this.headendcon === 2) this.partrot[i] = 15 + Math.sin(ps[4] / 16);
-          else if (this.partmode === 99 || this.partmode === 40) this.partframe[i] = 1;
-          else this.partframe[i] += 0.05 * f;
-          if (this.partframe[i] >= 3) this.partframe[i] = 0;
-          if (this.partframe[i] >= 2) this.partrot[i] += 20 * f;
-        }
-      }
+      const hook = POSES[this.partmode];
+      if (hook ? hook(this, i) === true : this.builtinPose(i) === true) continue;
       const spr = i === 5 && this.headendcon === 2 ? 'spr_sneo_head_sad' : this.partsprite[i];
       const fr = Math.floor(this.partframe[i]);
       const dx = this.x + px[i] * this.facing + pxo[i] * this.facing + shakevar, dy = this.y + py[i] + pyo[i] - shakevar;
-      draw_sprite_ext(spr, fr, dx, dy, 2 * this.facing, 2, this.partrot[i] * this.facing, this.partblend[i], this.image_alpha);
+      const sc = 2 + (i === 5 ? this.headsize : 0);
+      draw_sprite_ext(spr, fr, dx, dy, sc * this.facing, sc, this.partrot[i] * this.facing, this.partblend[i], this.image_alpha);
       const flashA = this.flash === 1 ? -Math.cos(this.fsiner / 5) * 0.4 + 0.6 : this.violentendflash > 0 ? this.violentendflash / 10 : 0;
       if (flashA > 0) {
         d3d_set_fog(true, 0xffffff);
@@ -759,6 +957,15 @@ export class SpamtonNeoEnemy extends MonsterParent {
       this.shocker = this.shocker_threshold;
       if (this.shocker_threshold > 2) this.shocker_threshold -= 0.25 * f;
     }
+    if (this.partmode === 13) {
+      this.partframe[1] = 1;
+      const ax = this.x + px[1] + pxo[1] + lengthdir_x(this.armlength, this.partrot[1] - 93) + 15;
+      const ay = this.y + py[1] + pyo[1] + lengthdir_y(this.armlength, this.partrot[1] - 93);
+      this.partframe[5] = (ps[5] / 6) % 3;
+      draw_set_color(0xffffff);
+      draw_circle(ax + 120, ay + 6, 13 + Math.sin(this.partrot[0] / 2) * 12, false);
+    }
+    POSE_AFTER[this.partmode]?.(this);
     const hd = this.hitdetector;
     if (hd && hd.alive) {
       hd.x = this.x + px[5] + pxo[5];
