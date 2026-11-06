@@ -2,9 +2,9 @@
 import {
   global, Instance, defineObject, S, instance_create, instance_exists, withObj, random, round, ceil,
   merge_color, draw_sprite_ext, d3d_set_fog, sprite_get_number,
-} from '../runtime/gm.js?v=20261106152740';
-import { snd_play, snd_stop, snd_pitch } from '../runtime/audio.js?v=20261106152740';
-import { withInst, knightEnemy } from './common.js?v=20261106152740';
+} from '../runtime/gm.js?v=20261106195344';
+import { snd_play, snd_stop, snd_pitch } from '../runtime/audio.js?v=20261106195344';
+import { withInst, knightEnemy } from './common.js?v=20261106195344';
 
 const g = global;
 
@@ -361,28 +361,30 @@ class HeroSusie extends HeroParent {
 }
 defineObject('obj_herosusie', HeroSusie);
 
+// Chapter 2's obj_heroparent Create: Ralsei has taken his hat off, so his battle poses are the
+// spr_ralsei_* set (the Chapter 1 spr_ralseib_* attack has a frame fewer and froze on its first frame).
 class HeroRalsei extends HeroParent {
   setup() {
     this.attackframes = 6;
     this.itemframes = 6;
     this.defendframes = 7;
-    this.actframes = 7;
-    this.actreturnframes = 10;
+    this.actframes = 8;
+    this.actreturnframes = 12;
     this.attackspeed = 0.5;
-    this.normalsprite = 'spr_ralseir';
-    this.idlesprite = 'spr_ralseib_idle';
-    this.defendsprite = 'spr_ralseib_defend';
-    this.hurtsprite = 'spr_ralsei_hurt';
-    this.attackreadysprite = 'spr_ralseib_attackready';
-    this.attacksprite = 'spr_ralseib_attack';
-    this.itemsprite = 'spr_ralseib_item';
-    this.itemreadysprite = 'spr_ralseib_itemready';
-    this.spellreadysprite = 'spr_ralseib_spellready';
-    this.spellsprite = 'spr_ralseib_spell';
-    this.defeatsprite = 'spr_ralseib_defeat';
-    this.victorysprite = 'spr_ralseib_victory';
-    this.actreadysprite = 'spr_ralseib_actready';
-    this.actsprite = 'spr_ralseib_act';
+    this.normalsprite = 'spr_ralsei_walk_right';
+    this.idlesprite = 'spr_ralsei_idle';
+    this.defendsprite = 'spr_ralsei_defend';
+    this.hurtsprite = 'spr_ralsei_hurt_fixed';
+    this.attackreadysprite = 'spr_ralsei_attackready';
+    this.attacksprite = 'spr_ralsei_attack';
+    this.itemsprite = 'spr_ralsei_item';
+    this.itemreadysprite = 'spr_ralsei_itemready';
+    this.spellreadysprite = 'spr_ralsei_spellready';
+    this.spellsprite = 'spr_ralsei_spell';
+    this.defeatsprite = 'spr_ralsei_defeat';
+    this.victorysprite = 'spr_ralsei_victory';
+    this.actreadysprite = 'spr_ralsei_actready';
+    this.actsprite = 'spr_ralsei_act';
     this.victoryframes = sprite_get_number(this.victorysprite);
     this.mywidth = 52;
     this.myheight = 86;

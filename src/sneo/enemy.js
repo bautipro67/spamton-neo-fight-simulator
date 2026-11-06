@@ -6,14 +6,14 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261106152740';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106152740';
-import { scr_bulletspawner } from './dbullet.js?v=20261106152740';
+} from './rt.js?v=20261106195344';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106195344';
+import { scr_bulletspawner } from './dbullet.js?v=20261106195344';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
-} from '../runtime/gm.js?v=20261106152740';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261106152740';
+} from '../runtime/gm.js?v=20261106195344';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261106195344';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -1414,8 +1414,10 @@ class CoasterHero extends Instance {
     this.image_yscale = 2;
   }
   endStep() {
+    // The car is drawn whether or not its hero is: Rude Buster and the spells hide the hero
+    // while their own animation stands in for them.
     const h = first(HERO_OBJ[this.HeroID]);
-    this.visible = !!h && h.visible !== false;
+    this.visible = !!h;
     if (!h) return;
     this.x = h.x + CAR_DX[this.HeroID];
     this.y = CAR_Y[this.HeroID];
@@ -1434,7 +1436,7 @@ class CoasterBack extends Instance {
   endStep() {
     const p = this.parentid;
     if (!p || !p.alive) return;
-    this.x = p.x;
+    this.x = p.x + 1; // o_coaster_hero_sneo Draw: back.x = x + 1
     this.y = p.y;
     this.visible = p.visible;
     this.depth = p.depth + 2;
