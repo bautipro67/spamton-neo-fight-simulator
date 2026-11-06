@@ -6,14 +6,14 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261106021943';
-import { first, camerax, cameray, i_ex, callOr, tagParent } from './common.js?v=20261106021943';
-import { scr_bulletspawner } from './dbullet.js?v=20261106021943';
+} from './rt.js?v=20261106022233';
+import { first, camerax, cameray, i_ex, callOr, tagParent } from './common.js?v=20261106022233';
+import { scr_bulletspawner } from './dbullet.js?v=20261106022233';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb,
-} from '../runtime/gm.js?v=20261106021943';
-import { snd_init, snd_loop, snd_pitch, mus_loop_ext, mus_stop } from '../runtime/audio.js?v=20261106021943';
+} from '../runtime/gm.js?v=20261106022233';
+import { snd_init, snd_loop, snd_pitch, mus_loop_ext, mus_stop } from '../runtime/audio.js?v=20261106022233';
 
 const snd_free = s => { if (s) mus_stop(s); };
 
