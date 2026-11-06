@@ -9,14 +9,14 @@ import {
   global, Instance, defineObject, instance_create, instance_destroy, instancesOf, instance_number, objectExists,
   choose, random, random_range, lerp, lengthdir_x, lengthdir_y, point_direction, draw_sprite_ext, draw_self,
   draw_set_color, draw_line_width, snd_play, snd_volume, bgr,
-} from '../rt.js?v=20261106201714';
+} from '../rt.js?v=20261106220732';
 import {
   first, camerax, cameray, callOr, scr_bullet_init, scr_lerpvar, scr_marker, scr_script_delayed, scr_doom,
   lerp_ease_in, lerp_ease_out,
-} from '../common.js?v=20261106201714';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106201714';
-import { POSES } from '../enemy.js?v=20261106201714';
-import { SneoBulletController } from './heads.js?v=20261106201714';
+} from '../common.js?v=20261106220732';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106220732';
+import { POSES } from '../enemy.js?v=20261106220732';
+import { SneoBulletController } from './heads.js?v=20261106220732';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const ctrl = () => first('obj_sneo_bulletcontroller');
@@ -63,20 +63,8 @@ SneoBulletController.prototype.type1_5 = function () {
     if (s.heart_release_con === 1) s.makeheart = 1;
   }
 };
-// Destroy_0's part that heads.js does not do yet: the heart fields go back to rest (a heart still out
-// when the turn ends would leave heart_release_con at 1, and the next heart turn would make no heart),
-// and he goes back to xstart (partmode 34 moved him 60 px right).
-const baseDestroy = SneoBulletController.prototype.onDestroy;
-SneoBulletController.prototype.onDestroy = function () {
-  const s = this.sneo;
-  if (alive(s)) {
-    s.makeheartinit = 0;
-    s.makeheartalt = 0;
-    s.heart_release_con = 0;
-    if (this.type === 1.5) s.x = s.xstart;
-  }
-  baseDestroy.call(this);
-};
+// (Destroy_0, in heads.js, puts the heart fields back to rest and him back at xstart: partmode 34
+// moved him 60 px right.)
 
 // ---------------------------------------------------------------- partmode 34 (Draw_0, per part)
 

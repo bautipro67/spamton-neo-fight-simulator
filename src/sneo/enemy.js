@@ -6,14 +6,14 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261106201714';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106201714';
-import { scr_bulletspawner } from './dbullet.js?v=20261106201714';
+} from './rt.js?v=20261106220732';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261106220732';
+import { scr_bulletspawner } from './dbullet.js?v=20261106220732';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
-} from '../runtime/gm.js?v=20261106201714';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261106201714';
+} from '../runtime/gm.js?v=20261106220732';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261106220732';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -489,7 +489,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
         this.armaim = -80;
         if (d === 3) this.rememberAndMove(this.x + 50, this.y, 8);
       }
-      if (rr === 7) { g.x += 15; g.maxxscale = 2; g.maxyscale = 2; this.rememberAndMove(this.x, this.y, 1); }
+      if (rr === 7) { g.x += 15; g.maxxscale = 2; g.maxyscale = 2; this.rememberxy(); }
       else if (rr === 8) this.rememberAndMove(this.x, cameray() + 20, 8);
       else if (rr === 8.5) { g.x += 64; g.y += 8; g.maxxscale = 3.2; g.maxyscale = 1.5; }
       else if (rr === 6) { g.x += 58; g.maxxscale = 10 / 3; g.maxyscale = 2.3; this.rememberAndMove(this.x + 200, this.y, 16); }
@@ -497,12 +497,24 @@ export class SpamtonNeoEnemy extends MonsterParent {
     }
     if (!instance_exists('obj_moveheart') && !instance_exists('obj_heart')) moveheart();
   }
-  // scr_rememberxy + scr_move_to_point_over_time (moved back by scr_move_to_rememberxy at turn end).
+  // scr_rememberxy: where scr_move_to_rememberxy brings him back (the bullet controller's Destroy,
+  // the phone call's Destroy, the columns' last frames).
+  rememberxy() {
+    this.___myrememberx = this.x;
+    this.___myremembery = this.y;
+  }
+  // scr_rememberxy + scr_move_to_point_over_time; the snapped wires he would leave behind are hidden.
   rememberAndMove(x, y, frames) {
-    if (this.___myrememberx === undefined) {
-      this.___myrememberx = this.x;
-      this.___myremembery = this.y;
-    }
+    this.rememberxy();
+    this.moveOverTime(x, y, frames);
+    for (const v of instancesOf('obj_sneo_vine_cut')) v.hide = 1;
+    for (const v of instancesOf('obj_sneo_vine_transition')) v.hide = 1;
+  }
+  moveToRemembered(frames) {
+    if (this.___myrememberx !== undefined) this.moveOverTime(this.___myrememberx, this.___myremembery, frames);
+  }
+  // scr_move_to_point_over_time (obj_move_to_point): a straight line, `frames` steps long.
+  moveOverTime(x, y, frames) {
     this.moveFrom = [this.x, this.y];
     this.moveTo = [x, y];
     this.moveTime = frames;
@@ -1150,12 +1162,6 @@ export class SpamtonNeoEnemy extends MonsterParent {
       this.x = lerp(this.moveFrom[0], this.moveTo[0], t);
       this.y = lerp(this.moveFrom[1], this.moveTo[1], t);
       if (t >= 1) this.moveTime = 0;
-    }
-    if (this.___myrememberx !== undefined && !i_ex('obj_sneo_bulletcontroller') && !i_ex('obj_growtangle') && !this.moveTime) {
-      const x = this.___myrememberx, y = this.___myremembery;
-      this.___myrememberx = undefined;
-      this.rememberAndMove(x, y, 8);
-      this.___myrememberx = undefined;
     }
     const m = this.myself;
     if (this.singleshotmercy > 9) {

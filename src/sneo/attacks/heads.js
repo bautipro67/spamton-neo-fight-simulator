@@ -3,12 +3,12 @@
 import {
   global, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, merge_color, snd_play, snd_volume, bgr, S, objectExists, irandom, draw_set_color, draw_circle, draw_self, lengthdir_x, lengthdir_y,
-} from '../rt.js?v=20261106201714';
+} from '../rt.js?v=20261106220732';
 import {
   first, camerax, cameray, scr_bullet_init, move_towards_point, scr_doom, snd_play_x, scr_afterimage, scr_movetowards,
-} from '../common.js?v=20261106201714';
-import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106201714';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106201714';
+} from '../common.js?v=20261106220732';
+import { BulletGenParent, BulletParent, CollideBullet } from '../bullets.js?v=20261106220732';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106220732';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 
@@ -97,7 +97,15 @@ export class SneoBulletController extends BulletGenParent {
     const s = this.sneo;
     if (!s || !s.alive) return;
     if (this.hideshooty) s.partframe[1] = 0;
+    // (a heart still out when the turn ends would leave heart_release_con at 1, and the next heart
+    // turn would make no heart)
+    s.makeheartinit = 0;
+    s.makeheartalt = 0;
+    s.heart_release_con = 0;
     if (s.endcon === 0) s.partmode = 1;
+    // Flying Heads II glides back to where it started dancing; every other attack snaps him home.
+    if (this.type === 0 && this.difficulty === 3) s.moveToRemembered(4);
+    else s.x = s.xstart;
     if (this.type === 8.5 && (this.krishp !== global.hp[1] || this.sushp !== global.hp[2] || this.ralhp !== global.hp[3])) s.nothitduringphonehands = 0;
     if (this.mercyaccumulated > 0) {
       const m = s.myself;
@@ -288,7 +296,8 @@ class LilGuy extends CollideBullet {
     this.image_speed = 1;
   }
   alarm2() { this.image_index = 1; }
-  animationEnd() { if (this.cutscene === 0) { this.image_speed = 0; this.image_index = 2; } }
+  // Other_7: the spit (frames 2, 3) has already wrapped to frame 0, where the head stops.
+  animationEnd() { if (this.cutscene === 0) this.image_speed = 0; }
   step() {
     if (this.cutscene === 0 && (this.x >= camerax() + 1000 || this.x <= camerax() - 200 || this.y >= cameray() + 600 || this.y <= cameray() - 200)) {
       instance_destroy(this);
