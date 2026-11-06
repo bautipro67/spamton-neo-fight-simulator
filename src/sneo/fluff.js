@@ -5,7 +5,7 @@
 import {
   Instance, defineObject, instance_destroy, merge_color, lengthdir_x, lengthdir_y, button2_h, random,
   snd_play, snd_is_playing, event_user, isA,
-} from './rt.js?v=20261106221344';
+} from './rt.js?v=20261106232405';
 
 // A bullet that matches several collision events of the fluff ball only gets the most specific
 // one: the GML's specific events (obj_basicbullet_sneo, the wire heart...) only hurt the ball and
@@ -14,8 +14,8 @@ const OWN_EVENT = ['obj_sneo_rotatingwall_bomb', 'obj_sneo_wallbullet_new', 'obj
   'obj_sneo_heartattack', 'obj_pipis_egg_bullet', 'obj_sneo_biglaser', 'obj_sneo_bigshot', 'obj_regularbullet'];
 const OWN_EVENT_SNEO = ['obj_spamtonshot', 'obj_sneo_heatattack_bullet', 'obj_sneo_lilguy_bullet', 'obj_sneo_wireheart',
   'obj_sneo_mmx_spreadshot'];
-import { first, snd_play_pitch } from './common.js?v=20261106221344';
-import { scr_afterimage_cut } from './shots.js?v=20261106221344';
+import { first, snd_play_pitch } from './common.js?v=20261106232405';
+import { scr_afterimage_cut } from './shots.js?v=20261106232405';
 
 const RED = 0xff0000, WHITE = 0xffffff;
 

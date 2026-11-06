@@ -9,15 +9,15 @@ import {
   global, Instance, defineObject, instance_create, instance_destroy, instance_find, instancesOf,
   random, random_range, merge_color, point_direction, lerp, clamp, draw_self, draw_sprite_ext,
   snd_play, bgr, sprite_exists,
-} from '../rt.js?v=20261106221344';
+} from '../rt.js?v=20261106232405';
 import {
   first, camerax, cameray, i_ex, eq, lt, defineShared, scr_bullet_init, scr_bullet_inherit, scr_darksize,
   scr_shakescreen, scr_remapvalue, scr_movetowards, scr_ease_in, scr_ease_out,
-} from '../common.js?v=20261106221344';
-import { RegularBullet } from '../bullets.js?v=20261106221344';
-import { BasicBulletSneo } from '../shots.js?v=20261106221344';
-import { SneoBulletController } from './heads.js?v=20261106221344';
-import { STEP_HOOKS } from '../enemy.js?v=20261106221344';
+} from '../common.js?v=20261106232405';
+import { RegularBullet } from '../bullets.js?v=20261106232405';
+import { BasicBulletSneo } from '../shots.js?v=20261106232405';
+import { SneoBulletController } from './heads.js?v=20261106232405';
+import { STEP_HOOKS } from '../enemy.js?v=20261106232405';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const heart = () => first('obj_heart');
@@ -452,8 +452,8 @@ class BoxingCrescent extends Instance {
 }
 defineShared('obj_boxing_crescent', BoxingCrescent);
 
-// The SNEO laser sprites (spr_bullet_laser_square_sneo / spr_bullet_laser_front_sneo) are not
-// extracted: fall back to spr_bullet_laser_square.
+// The SNEO laser sprites (spr_bullet_laser_square_sneo / spr_bullet_laser_front_sneo); a build
+// without them falls back to spr_bullet_laser_square.
 const laserSprite = name => (sprite_exists(name) ? name : 'spr_bullet_laser_square');
 
 // obj_werewire_bullet_lasercircle: the eye's muzzle; it fires one obj_werewire_bullet_lasersquare.

@@ -8,15 +8,15 @@
 import {
   global, Instance, defineObject, instance_create, instance_destroy, instancesOf, instance_number, objectExists,
   choose, random, random_range, lerp, lengthdir_x, lengthdir_y, point_direction, draw_sprite_ext, draw_self,
-  draw_set_color, draw_line_width, snd_play, snd_volume, bgr,
-} from '../rt.js?v=20261106221344';
+  draw_set_color, draw_line_width, snd_play, snd_volume, snd_is_playing, bgr,
+} from '../rt.js?v=20261106232405';
 import {
   first, camerax, cameray, callOr, scr_bullet_init, scr_lerpvar, scr_marker, scr_script_delayed, scr_doom,
   lerp_ease_in, lerp_ease_out,
-} from '../common.js?v=20261106221344';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106221344';
-import { POSES } from '../enemy.js?v=20261106221344';
-import { SneoBulletController } from './heads.js?v=20261106221344';
+} from '../common.js?v=20261106232405';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106232405';
+import { POSES } from '../enemy.js?v=20261106232405';
+import { SneoBulletController } from './heads.js?v=20261106232405';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const ctrl = () => first('obj_sneo_bulletcontroller');
@@ -378,6 +378,33 @@ class WireHeart extends BasicBulletSneo {
     } else if (shot.big == 1) this.hp -= 5;
     else this.hp -= 1;
     instance_destroy(shot);
+    this.damagetimer = 5;
+    snd_play('snd_damage');
+    if (this.hp <= 0) this.destroyed = 1;
+  }
+  // Touching a FluffyGuard ball (whose own event takes 4 HP from the heart every other frame): the
+  // main heart cuts 80 frames off the turn; the others lose 5 HP and take 10 from the ball.
+  collision_obj_sneo_tiny_ralsei(o) {
+    if (o.active == 0 || this.invincibility_timer > 0) return;
+    this.invincibility_timer = 10;
+    const s = sneo(), diff = s ? s.difficulty : 0;
+    if (global.turntimer < 150) {
+      this.hp = 0;
+      if (this.type === 0 || (this.type === 1 && diff > 2 && global.turntimer > 20)) {
+        global.turntimer = 20;
+        for (const w of instancesOf('obj_sneo_wireheart')) {
+          w.hp = 0;
+          w.destroyed = 1;
+        }
+      }
+    } else if (this.type === 0 || (this.type === 1 && diff > 2)) {
+      global.turntimer -= 80;
+    } else {
+      this.hp -= 5;
+      o.hp -= 10;
+      o.alarm[0] = 10;
+      if (!snd_is_playing('snd_hurt1')) snd_play('snd_hurt1');
+    }
     this.damagetimer = 5;
     snd_play('snd_damage');
     if (this.hp <= 0) this.destroyed = 1;
