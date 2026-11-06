@@ -9,15 +9,15 @@ import {
   global, Instance, defineObject, instance_create, instance_destroy, instance_find, instancesOf,
   random, random_range, merge_color, point_direction, lerp, clamp, draw_self, draw_sprite_ext,
   snd_play, bgr, sprite_exists,
-} from '../rt.js?v=20261106144300';
+} from '../rt.js?v=20261106144453';
 import {
   first, camerax, cameray, i_ex, eq, lt, defineShared, scr_bullet_init, scr_bullet_inherit, scr_darksize,
   scr_shakescreen, scr_remapvalue, scr_movetowards, scr_ease_in, scr_ease_out,
-} from '../common.js?v=20261106144300';
-import { RegularBullet } from '../bullets.js?v=20261106144300';
-import { BasicBulletSneo } from '../shots.js?v=20261106144300';
-import { SneoBulletController } from './heads.js?v=20261106144300';
-import { STEP_HOOKS } from '../enemy.js?v=20261106144300';
+} from '../common.js?v=20261106144453';
+import { RegularBullet } from '../bullets.js?v=20261106144453';
+import { BasicBulletSneo } from '../shots.js?v=20261106144453';
+import { SneoBulletController } from './heads.js?v=20261106144453';
+import { STEP_HOOKS } from '../enemy.js?v=20261106144453';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const heart = () => first('obj_heart');

@@ -9,14 +9,14 @@ import {
   global, Instance, defineObject, instance_create, instance_destroy, instancesOf, instance_number, objectExists,
   choose, random, random_range, lerp, lengthdir_x, lengthdir_y, point_direction, draw_sprite_ext, draw_self,
   draw_set_color, draw_line_width, snd_play, snd_volume, bgr,
-} from '../rt.js?v=20261106144300';
+} from '../rt.js?v=20261106144453';
 import {
   first, camerax, cameray, callOr, scr_bullet_init, scr_lerpvar, scr_marker, scr_script_delayed, scr_doom,
   lerp_ease_in, lerp_ease_out,
-} from '../common.js?v=20261106144300';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106144300';
-import { POSES } from '../enemy.js?v=20261106144300';
-import { SneoBulletController } from './heads.js?v=20261106144300';
+} from '../common.js?v=20261106144453';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106144453';
+import { POSES } from '../enemy.js?v=20261106144453';
+import { SneoBulletController } from './heads.js?v=20261106144453';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const ctrl = () => first('obj_sneo_bulletcontroller');
