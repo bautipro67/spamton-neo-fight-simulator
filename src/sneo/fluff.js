@@ -4,10 +4,18 @@
 // (obj_fluffyguard is an older version of this object that nothing creates.)
 import {
   Instance, defineObject, instance_destroy, merge_color, lengthdir_x, lengthdir_y, button2_h, random,
-  snd_play, snd_is_playing, event_user,
-} from './rt.js?v=20261106142257';
-import { first, snd_play_pitch } from './common.js?v=20261106142257';
-import { scr_afterimage_cut } from './shots.js?v=20261106142257';
+  snd_play, snd_is_playing, event_user, isA,
+} from './rt.js?v=20261106142557';
+
+// A bullet that matches several collision events of the fluff ball only gets the most specific
+// one: the GML's specific events (obj_basicbullet_sneo, the wire heart...) only hurt the ball and
+// never destroy the attack, so the generic ones skip bullets that have their own event.
+const OWN_EVENT = ['obj_sneo_rotatingwall_bomb', 'obj_sneo_wallbullet_new', 'obj_basicbullet_sneo', 'obj_sneo_lilguy',
+  'obj_sneo_heartattack', 'obj_pipis_egg_bullet', 'obj_sneo_biglaser', 'obj_sneo_bigshot', 'obj_regularbullet'];
+const OWN_EVENT_SNEO = ['obj_spamtonshot', 'obj_sneo_heatattack_bullet', 'obj_sneo_lilguy_bullet', 'obj_sneo_wireheart',
+  'obj_sneo_mmx_spreadshot'];
+import { first, snd_play_pitch } from './common.js?v=20261106142557';
+import { scr_afterimage_cut } from './shots.js?v=20261106142557';
 
 const RED = 0xff0000, WHITE = 0xffffff;
 
@@ -66,7 +74,7 @@ class TinyRalsei extends Instance {
     this.hurt(amount);
   }
   collision_obj_collidebullet(o) {
-    if (this.active == 0) return;
+    if (this.active == 0 || OWN_EVENT.some(n => isA(o, n))) return;
     instance_destroy(o);
     if (this.alarm[0] > 0) return;
     const spr = o.sprite_index;
@@ -82,8 +90,8 @@ class TinyRalsei extends Instance {
     const spr = o.sprite_index;
     this.hurt(spr === 'spr_spamtonneo_faceAttack_nose_bullet' || spr === 'spr_spamtonneo_faceAttack_wisp' || spr === 'spr_bullet_laser_square' ? 3 : 10);
   }
-  collision_obj_basicbullet_sneo() {
-    if (this.active == 0 || this.alarm[0] > 0) return;
+  collision_obj_basicbullet_sneo(o) {
+    if (this.active == 0 || this.alarm[0] > 0 || OWN_EVENT_SNEO.some(n => isA(o, n))) return;
     this.hurt(10);
   }
   collision_obj_spamtonshot() {
