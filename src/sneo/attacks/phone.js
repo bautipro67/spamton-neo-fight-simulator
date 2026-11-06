@@ -13,14 +13,14 @@ import {
   random, random_range, irandom, lerp, lengthdir_x, lengthdir_y, point_direction, point_distance, merge_color, bgr,
   draw_self, draw_sprite_ext, draw_set_alpha, draw_set_color, draw_line_width, d3d_set_fog, button1_p, button3_h,
   snd_play, snd_volume, S,
-} from '../rt.js?v=20261106220732';
+} from '../rt.js?v=20261106221344';
 import {
   first, camerax, cameray, callOr, room_width, room_height, scr_bullet_init, scr_bullet_inherit, scr_ease_in,
   scr_ease_out, snd_play_pitch,
-} from '../common.js?v=20261106220732';
-import { BulletParent, CollideBullet } from '../bullets.js?v=20261106220732';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106220732';
-import { SneoBulletController } from './heads.js?v=20261106220732';
+} from '../common.js?v=20261106221344';
+import { BulletParent, CollideBullet } from '../bullets.js?v=20261106221344';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261106221344';
+import { SneoBulletController } from './heads.js?v=20261106221344';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const isphase = callOr('scr_isphase', p => (p === 'bullets' ? global.mnfight === 2 : false));
@@ -666,7 +666,7 @@ defineObject('obj_sneo_phonecall_sneohead', PhonecallSneohead);
 // ---------------------------------------------------------------- PHONE HANDS
 
 // obj_sneo_bulletcontroller type 8.5: he fades out; the phone-hands head comes in at btimer 115
-// (btimer starts at 99). The GML also fades his wires (draw alpha); enemy.js draws them opaque.
+// (btimer starts at 99). His wires fade with him (enemy.js draws them at his image_alpha).
 SneoBulletController.prototype.type8_5 = function () {
   const s = this.sneo;
   if (this.init === 1) {
