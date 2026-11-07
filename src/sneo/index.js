@@ -1,12 +1,12 @@
 // Imports every Spamton NEO / bullet-phase module so their objects and scripts get registered.
-import './common.js?v=20261107051915';
-import './bullets.js?v=20261107051915';
-import './board.js?v=20261107051915';
-import './soul.js?v=20261107051915';
-import './shots.js?v=20261107051915';
-import './fluff.js?v=20261107051915';
-import './dbullet.js?v=20261107051915';
-import './enemy.js?v=20261107051915';
+import './common.js?v=20261107052643';
+import './bullets.js?v=20261107052643';
+import './board.js?v=20261107052643';
+import './soul.js?v=20261107052643';
+import './shots.js?v=20261107052643';
+import './fluff.js?v=20261107052643';
+import './dbullet.js?v=20261107052643';
+import './enemy.js?v=20261107052643';
 
 // Attack modules: a missing or broken one only disables that attack (enemy.js PORTED_RR).
 // In fight order: Flying Heads, RECREW columns, heart attack, phone call + phone hands, face attack,
@@ -17,6 +17,6 @@ const loadAttacks = Promise.all(ATTACK_MODULES.map(m => import('./attacks/' + m 
   if (!String(e).includes('Failed to fetch')) console.warn('sneo attack module failed:', m, e);
 })));
 await loadAttacks;
-await import('./weird.js?v=20261107051915' + new URL(import.meta.url).search);
+await import('./weird.js?v=20261107052643' + new URL(import.meta.url).search);
 // The scenes before and after the fight (normal route).
-await import('./scenes.js?v=20261107051915' + new URL(import.meta.url).search);
+await import('./scenes.js?v=20261107052643' + new URL(import.meta.url).search);

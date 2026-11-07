@@ -6,13 +6,13 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists, instancesOf,
   draw_sprite_ext, draw_set_color, draw_rectangle, lerp, point_distance, point_direction, lengthdir_x, lengthdir_y,
   random_range, clamp, left_h, right_h, up_h, down_h, button2_h,
-} from '../runtime/gm.js?v=20261107051915';
-import { assets } from '../runtime/assets.js?v=20261107051915';
+} from '../runtime/gm.js?v=20261107052643';
+import { assets } from '../runtime/assets.js?v=20261107052643';
 import {
   snd_play, snd_pitch, snd_volume, snd_init, mus_loop_ext, mus_volume, mus_stop, mus_pause, mus_resume,
-} from '../runtime/audio.js?v=20261107051915';
-import { scr_darkbox } from './common.js?v=20261107051915';
-import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261107051915';
+} from '../runtime/audio.js?v=20261107052643';
+import { scr_darkbox } from './common.js?v=20261107052643';
+import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261107052643';
 
 const VERSION = new URL(import.meta.url).search;
 const ROOMS_URL = new URL('../../assets/rooms/', import.meta.url).href;
@@ -20,8 +20,9 @@ const ROOMS_URL = new URL('../../assets/rooms/', import.meta.url).href;
 // ---------------------------------------------------------------- rooms
 
 // Each room is one picture (its tile, asset and background layers); it is registered as a sprite.
+// A failed download is not remembered: it is tried again (once here, and on the next call).
 const roomLoads = {};
-export function loadRoom(name) {
+export function loadRoom(name, tries = 2) {
   roomLoads[name] ??= new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
@@ -30,6 +31,10 @@ export function loadRoom(name) {
     };
     img.onerror = () => reject(new Error('failed to load room ' + name));
     img.src = ROOMS_URL + name + '.png' + VERSION;
+  }).catch(e => {
+    delete roomLoads[name];
+    if (tries > 1) return new Promise(r => setTimeout(r, 500)).then(() => loadRoom(name, tries - 1));
+    throw e;
   });
   return roomLoads[name];
 }

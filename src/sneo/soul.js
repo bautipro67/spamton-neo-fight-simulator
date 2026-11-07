@@ -4,10 +4,10 @@
 import {
   G, global, Instance, defineObject, defineScript, instance_create, instance_destroy, instancesOf, place_meeting, point_distance, draw_self, draw_sprite_ext, event_user, S, snd_play, snd_stop,
   left_h, right_h, up_h, down_h, button2_h, button1_p, button1_h, button1_r, random,
-} from './rt.js?v=20261107051915';
-import { first, view_x, view_y, move_towards_point } from './common.js?v=20261107051915';
-import { drawSoulHat } from '../hats.js?v=20261107051915';
-import { snd_loop, snd_pitch, snd_volume } from '../runtime/audio.js?v=20261107051915';
+} from './rt.js?v=20261107052643';
+import { first, view_x, view_y, move_towards_point } from './common.js?v=20261107052643';
+import { drawSoulHat } from '../hats.js?v=20261107052643';
+import { snd_loop, snd_pitch, snd_volume } from '../runtime/audio.js?v=20261107052643';
 
 const SOLID = 'obj_battlesolid';
 

@@ -10,16 +10,16 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instancesOf,
   draw_sprite_ext, draw_set_color, draw_set_alpha, draw_set_font, draw_text, draw_rectangle, lerp, random, random_range,
   controls,
-} from '../runtime/gm.js?v=20261107051915';
-import { keyName } from '../screens/controls.js?v=20261107051915';
-import { snd_play, snd_pitch, snd_stop, snd_init, mus_loop_ext, mus_volume, mus_stop, snd_free_all } from '../runtime/audio.js?v=20261107051915';
-import { POSES, SceneEx2 } from './enemy.js?v=20261107051915';
-import { tagParent, first, camerax, cameray, i_ex, snd_play_pitch, scr_afterimage, scr_dark_marker } from './common.js?v=20261107051915';
-import { startBattle } from '../battle/setup.js?v=20261107051915';
-import { gotoRoom } from '../screens/common.js?v=20261107051915';
+} from '../runtime/gm.js?v=20261107052643';
+import { keyName } from '../screens/controls.js?v=20261107052643';
+import { snd_play, snd_pitch, snd_stop, snd_init, mus_loop_ext, mus_volume, mus_stop, snd_free_all } from '../runtime/audio.js?v=20261107052643';
+import { POSES, SceneEx2 } from './enemy.js?v=20261107052643';
+import { tagParent, first, camerax, cameray, i_ex, snd_play_pitch, scr_afterimage, scr_dark_marker } from './common.js?v=20261107052643';
+import { startBattle } from '../battle/setup.js?v=20261107052643';
+import { gotoRoom } from '../screens/common.js?v=20261107052643';
 import {
   loadRoom, enterRoom, c, scr_cutscene_make, scr_maincharacters_actors, c_waitcustom_end, d_ex, lerpvar, moveToPoint,
-} from '../screens/cutscene.js?v=20261107051915';
+} from '../screens/cutscene.js?v=20261107052643';
 
 const BS = String.fromCharCode(92);
 const PARTS = ['spr_sneo_wingl', 'spr_sneo_arml', 'spr_sneo_legl', 'spr_sneo_legr', 'spr_sneo_body', 'spr_sneo_head', 'spr_sneo_armr', 'spr_sneo_wingr'];
@@ -949,7 +949,12 @@ export function startWeirdPostScene() {
 // BEGIN > NORMAL ROUTE (and every retry): the scene before the fight, or the fight right away when
 // the SCENES option is off. global.tempflag[32] is set once the fight has started.
 export async function startPreScene() {
-  await loadRoom('room_dw_mansion_b_east');
+  try {
+    await loadRoom('room_dw_mansion_b_east');
+  } catch (e) {
+    console.warn(e); // without the room, straight to the fight
+    return startBattle({ intro: G.settings?.intro !== false, weird: false });
+  }
   G.weird = false;
   gotoRoom();
   const tempflag = global.tempflag; // scr_gamestart clears it; the retry count lives there
@@ -988,7 +993,7 @@ SceneEx2.prototype.step = function () {
       this.con = 10;
       G.sneoAfterFight = true;
       this.alarm[0] = 5;
-      loadRoom('room_dw_mansion_b_east_a');
+      loadRoom('room_dw_mansion_b_east_a').catch(() => {}); // fetched early; startPostScene waits for it
     }
   }
   if (this.con === 11) {
@@ -1114,7 +1119,13 @@ class AfterScene extends Instance {
 defineObject('obj_ch2_sceneex2a', AfterScene);
 
 export async function startPostScene() {
-  await loadRoom('room_dw_mansion_b_east_a');
+  try {
+    await loadRoom('room_dw_mansion_b_east_a');
+  } catch (e) {
+    console.warn(e); // without the room, straight to the end screen
+    G.sneoAfterFight = false;
+    return S.startEnding('win');
+  }
   const tempflag = global.tempflag;
   gotoRoom();
   global.tempflag = tempflag;
