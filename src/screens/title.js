@@ -6,17 +6,17 @@ import {
   draw_sprite_ext, draw_set_color, draw_set_font, draw_set_alpha, draw_rectangle, draw_text, controls,
   draw_set_halign, draw_text_transformed, fa_center, fa_left,
   sprite_get_xoffset, sprite_get_yoffset, draw_line_width,
-} from '../runtime/gm.js?v=20261106232405';
-import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261106232405';
-import { startBattle } from '../battle/setup.js?v=20261106232405';
-import * as SB from '../debug/sandbox.js?v=20261106232405';
-import { gotoRoom, fadeOut, centerText } from './common.js?v=20261106232405';
-import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261106232405';
-import { HATS, currentHat, drawHat } from '../hats.js?v=20261106232405';
-import { openEquipment } from './equipment.js?v=20261106232405';
-import { openControls, keyName } from './controls.js?v=20261106232405';
-import './gameover.js?v=20261106232405';
-import './ending.js?v=20261106232405';
+} from '../runtime/gm.js?v=20261107001913';
+import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107001913';
+import { startBattle } from '../battle/setup.js?v=20261107001913';
+import * as SB from '../debug/sandbox.js?v=20261107001913';
+import { gotoRoom, fadeOut, centerText } from './common.js?v=20261107001913';
+import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261107001913';
+import { HATS, currentHat, drawHat } from '../hats.js?v=20261107001913';
+import { openEquipment } from './equipment.js?v=20261107001913';
+import { openControls, keyName } from './controls.js?v=20261107001913';
+import './gameover.js?v=20261107001913';
+import './ending.js?v=20261107001913';
 
 // Dark panel over the title art, behind the OPTIONS and CONTROLS lists.
 class Panel extends Instance {
@@ -57,14 +57,6 @@ class Title extends Instance {
   draw() {
     const t = this.t;
     const a = Math.min(1, t / 30);
-    draw_set_font('fnt_mainbig');
-    draw_set_color(0xffffff);
-    draw_set_alpha(a);
-    draw_set_halign(fa_center);
-    draw_text_transformed(320, 24, 'SPAMTON NEO', 2, 2, 0);
-    draw_text_transformed(320, 92, 'FIGHT SIMULATOR', 1, 1, 0);
-    draw_set_halign(fa_left);
-    draw_set_alpha(1);
     // Spamton NEO's body parts on their wires (obj_spamton_neo_enemy's idle swing, partmode 1).
     const parts = ['spr_sneo_wingl', 'spr_sneo_arml', 'spr_sneo_legl', 'spr_sneo_legr', 'spr_sneo_body', 'spr_sneo_head', 'spr_sneo_armr', 'spr_sneo_wingr'];
     const bx = 250, by = 150;
@@ -79,9 +71,20 @@ class Title extends Instance {
       const ox = sprite_get_xoffset(p) * 2, oy = sprite_get_yoffset(p) * 2;
       let rot = Math.sin(t * (1 + i / 5) * 2 / 30) * 15;
       let fr = 0;
-      if (i === 5) { rot -= 20; fr = Math.floor(t * 0.1) % 3; if (fr >= 2) rot += 40; }
+      // The head has no sway of its own outside his attacks (Step_2 resets its siner every frame):
+      // it holds about -18 degrees and jerks up on the laugh frame.
+      if (i === 5) { rot = Math.sin(4 / 30) * 15 - 20; fr = Math.floor(t * 0.1) % 3; if (fr >= 2) rot += 40; }
       draw_sprite_ext(p, fr, bx + ox, by + oy, 2, 2, rot, 0xffffff, a);
     });
+    draw_set_alpha(1);
+    // The title goes over the wires.
+    draw_set_font('fnt_mainbig');
+    draw_set_color(0xffffff);
+    draw_set_alpha(a);
+    draw_set_halign(fa_center);
+    draw_text_transformed(320, 24, 'SPAMTON NEO', 2, 2, 0);
+    draw_text_transformed(320, 92, 'FIGHT SIMULATOR', 1, 1, 0);
+    draw_set_halign(fa_left);
     draw_set_alpha(1);
     draw_set_font('fnt_main');
     draw_set_color(0x808080);

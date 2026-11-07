@@ -1,9 +1,9 @@
 // Party damage, down state, revive/heal, enemy targeting, game over trigger.
 import {
   global, G, defineScript, S, instance_create, instance_exists, withObj, choose, round, ceil,
-} from '../runtime/gm.js?v=20261106232405';
-import { snd_play, snd_stop, snd_free_all } from '../runtime/audio.js?v=20261106232405';
-import { withInst, knightEnemy } from './common.js?v=20261106232405';
+} from '../runtime/gm.js?v=20261107001913';
+import { snd_play, snd_stop, snd_free_all } from '../runtime/audio.js?v=20261107001913';
+import { withInst, knightEnemy } from './common.js?v=20261107001913';
 
 const g = global;
 
@@ -425,9 +425,7 @@ defineScript('scr_gameover', () => {
     shot.height = G.ctx.canvas.height;
     shot.getContext('2d').drawImage(G.ctx.canvas, 0, 0);
   }
-  // The SOUL appears where it was (or where it would enter the box); tempflag[96]: the Knight's HP
-  // went below 80% (DEVICE_FAILURE's "I FELT IT THERE SHINING" lines).
+  // The SOUL breaks where it was (or where it would enter the box).
   const heart = G.instances.find(i => i.alive && (i.constructor.objName === 'obj_heart'));
-  G.knightNearWin = g.tempflag?.[96] == 1;
   G.pendingGameover = { x: heart ? heart.x - G.camX : (g.heartx ?? 310), y: heart ? heart.y - G.camY : (g.hearty ?? 160), shot };
 });
