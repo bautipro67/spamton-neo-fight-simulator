@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261107201439';
-import { audio_stop_all, snd_init } from '../runtime/audio.js?v=20261107201439';
-import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107201439';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107201439';
-import { registerBackground } from './misc.js?v=20261107201439';
+} from '../runtime/gm.js?v=20261107203112';
+import { audio_stop_all, snd_init } from '../runtime/audio.js?v=20261107203112';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107203112';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107203112';
+import { registerBackground } from './misc.js?v=20261107203112';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -505,7 +505,7 @@ defineObject('obj_time', ObjTime);
 const INTRO_START = [[81, 60], [78, 125], [77, 210]]; // the coasters' seats (camera at x 1640)
 
 // Where Kris stands before the Weird Route fight: in front of the Dark Fountain.
-const WEIRD_INTRO_START = [[300, 300], [0, 0], [0, 0]];
+const WEIRD_INTRO_START = [[60, 300], [0, 0], [0, 0]]; // where Kris stands after obj_fountainkris_ch2_sideb
 
 // Starts a fresh Spamton NEO fight: opts.intro = false skips the encounter transition; opts.weird
 // picks the Weird Route fight (a retry keeps the route it was started with).
