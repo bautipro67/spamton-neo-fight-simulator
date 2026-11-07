@@ -6,13 +6,13 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists, instancesOf,
   draw_sprite_ext, draw_set_color, draw_rectangle, lerp, point_distance, point_direction, lengthdir_x, lengthdir_y,
   random_range, clamp, left_h, right_h, up_h, down_h, button2_h,
-} from '../runtime/gm.js?v=20261107052643';
-import { assets } from '../runtime/assets.js?v=20261107052643';
+} from '../runtime/gm.js?v=20261107054818';
+import { assets } from '../runtime/assets.js?v=20261107054818';
 import {
   snd_play, snd_pitch, snd_volume, snd_init, mus_loop_ext, mus_volume, mus_stop, mus_pause, mus_resume,
-} from '../runtime/audio.js?v=20261107052643';
-import { scr_darkbox } from './common.js?v=20261107052643';
-import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261107052643';
+} from '../runtime/audio.js?v=20261107054818';
+import { scr_darkbox } from './common.js?v=20261107054818';
+import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261107054818';
 
 const VERSION = new URL(import.meta.url).search;
 const ROOMS_URL = new URL('../../assets/rooms/', import.meta.url).href;

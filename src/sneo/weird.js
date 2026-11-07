@@ -11,12 +11,12 @@ import {
   random, irandom, irandom_range, lerp, merge_color, make_color_hsv, round, bgr, button3_p,
   draw_sprite_ext, draw_sprite_tiled_ext, draw_set_color, draw_rectangle, snd_play, snd_stop, snd_pitch,
   snd_init, mus_loop, mus_pitch, mus_volume, mus_stop,
-} from './rt.js?v=20261107052643';
-import { first, camerax, cameray, i_ex, scr_ease_inout, snd_play_pitch, scr_bullet_init } from './common.js?v=20261107052643';
-import { SpamtonNeoEnemy, POSES, STEP_HOOKS, isphase, msgset, msgnext, writerExists, killWriters } from './enemy.js?v=20261107052643';
-import { DBulletController } from './dbullet.js?v=20261107052643';
-import { CollideBullet } from './bullets.js?v=20261107052643';
-import { scr_afterimage_cut } from './shots.js?v=20261107052643';
+} from './rt.js?v=20261107054818';
+import { first, camerax, cameray, i_ex, scr_ease_inout, snd_play_pitch, scr_bullet_init } from './common.js?v=20261107054818';
+import { SpamtonNeoEnemy, POSES, STEP_HOOKS, isphase, msgset, msgnext, writerExists, killWriters } from './enemy.js?v=20261107054818';
+import { DBulletController } from './dbullet.js?v=20261107054818';
+import { CollideBullet } from './bullets.js?v=20261107054818';
+import { scr_afterimage_cut } from './shots.js?v=20261107054818';
 
 const P = SpamtonNeoEnemy.prototype;
 const kris = () => first('obj_herokris');
@@ -390,15 +390,22 @@ P.specialFlames = function () {
 // partmode 41: the long laugh, the head jerking through its frames.
 POSES[41] = (s, i) => {
   if (i === 0) s.laughtimer += 1;
-  if (i !== 5) return;
-  const t = s.laughtimer, pf = s.partframe, pr = s.partrot;
-  if (t === 1) snd_play('snd_sneo_laugh_long');
-  if (t >= 1 && t < 30) { s.headsize = random(0.25); pf[i] = 0; pr[i] = 30 + random(10); }
-  if (t >= 30 && t < 48) { pf[i] = 1; s.headsize = random(0.25); pr[i] = -40 + random(10); }
-  if (t >= 48 && t < 60) { pf[i] = 2; s.headsize = random(0.25); pr[i] = 30; }
-  if (t >= 60) { pf[i] = 3; s.headsize = random(0.25); pr[i] = -70 + random(10); }
-  if (t >= 80) s.headsize = 0;
-  if (pf[i] >= 3) pf[i] = 0;
+  if (i === 5) {
+    const t = s.laughtimer, pf = s.partframe, pr = s.partrot;
+    if (t === 1) snd_play('snd_sneo_laugh_long');
+    if (t >= 1 && t < 30) { s.headsize = random(0.25); pf[i] = 0; pr[i] = 30 + random(10); }
+    if (t >= 30 && t < 48) { pf[i] = 1; s.headsize = random(0.25); pr[i] = -40 + random(10); }
+    if (t >= 48 && t < 60) { pf[i] = 2; s.headsize = random(0.25); pr[i] = 30; }
+    if (t >= 60) { pf[i] = 3; s.headsize = random(0.25); pr[i] = -70 + random(10); }
+    if (t >= 80) s.headsize = 0;
+    if (pf[i] >= 3) pf[i] = 0;
+  }
+  // Every part shakes while he laughs.
+  const f = s.f ?? 2;
+  s.partsiner[i] += (1 + i / 5) * f;
+  s.partx[i] = Math.sin(s.partsiner[i] / 2 * f);
+  s.party[i] = Math.cos(s.partsiner[i] / 2 * f);
+  if (global.flag?.[8] === 1) s.shockthreshold = Math.max(5, Math.min(100, s.shockthreshold));
 };
 
 // ---------------------------------------------------------------- obj_darkfountain
