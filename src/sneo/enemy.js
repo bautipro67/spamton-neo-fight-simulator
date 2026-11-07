@@ -6,14 +6,15 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261107133820';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261107133820';
-import { scr_bulletspawner } from './dbullet.js?v=20261107133820';
+} from './rt.js?v=20261107140756';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261107140756';
+import { scr_bulletspawner } from './dbullet.js?v=20261107140756';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
-} from '../runtime/gm.js?v=20261107133820';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261107133820';
+  draw_rectangle,
+} from '../runtime/gm.js?v=20261107140756';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261107140756';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -1414,22 +1415,26 @@ export class SceneEx2 extends Instance {
       b.parentid = c;
     }
   }
+  // Draw_0 (fightmode: the room's black covers are off): the tracks first, then the cityscape over
+  // their top, then the mercy ending's flash to Spamton's shop.
   draw() {
     const cx = camerax(), cy = cameray();
-    draw_sprite_ext('spr_pixel_white', 0, cx - 10, cy - 10, 700, 520, 0, 0, 1);
+    draw_sprite_ext('spr_pixel_white', 0, cx - 10, cy - 10, 700, 520, 0, 0, 1); // the empty room (black)
+    this.trackx += this.trackspeed;
+    if (this.trackx + 640 < cx) this.trackx += 640;
+    if (this.trackx - 640 > cx) this.trackx -= 640;
+    for (const ty of this.tracky) for (const k of [-640, 0, 640]) draw_sprite_ext('spr_sneo_track', 0, this.trackx + k, ty, 2, 2, 0, 0xffffff, this.image_alpha);
     if (this.cityscape_alpha < 1) this.cityscape_alpha = lerp(this.cityscape_alpha, 1, 0.2);
     this.cityscape_speed -= this.cityscape_speed_max;
-    for (const [spr, k] of CITY) {
+    // scr_draw_sprite_tiled_area: 198x49 pictures at scale 2, tiled across the top 98 pixels.
+    const tiled = (spr, offset, xs, ys, alpha) => {
       const w = 396;
-      let ox = (this.cityscape_speed * k) % w;
+      let ox = offset % w;
       if (ox > 0) ox -= w;
-      for (let x = ox; x < 640; x += w) draw_sprite_ext(spr, 0, cx + x, cy, 2, 2, 0, 0xffffff, this.cityscape_alpha);
-    }
-    if (this.shop_spamton_bg_con > 1) {
-      let ox = this.cityscape_speed % 396;
-      if (ox > 0) ox -= 396;
-      for (let x = ox; x < 640; x += 396) draw_sprite_ext('spr_shop_spamton_bg_battle', 0, cx + x, cy, 1.6708, 1.195, 0, 0xffffff, this.cityscape_alpha);
-    }
+      for (let x = ox; x < 640; x += w) draw_sprite_ext(spr, 0, cx + x, cy, xs, ys, 0, 0xffffff, alpha);
+    };
+    for (const [spr, k] of CITY) tiled(spr, this.cityscape_speed * k, 2, 2, this.cityscape_alpha);
+    if (this.shop_spamton_bg_con > 1) tiled('spr_shop_spamton_bg_battle', this.cityscape_speed, 1.6708, 1.195, this.cityscape_alpha);
     if (this.shop_spamton_bg_con === 1 && !i_ex('obj_writer') && !i_ex('obj_battleblcon')) {
       this.shop_spamton_bg_timer += 1;
       if (this.shop_spamton_bg_timer === 1) snd_play('snd_petrify');
@@ -1442,13 +1447,14 @@ export class SceneEx2 extends Instance {
         for (const e of instancesOf('obj_spamton_neo_enemy')) e.targetbgspeed = 5;
       }
     }
+    // The flash covers the cityscape band only (spr_whitepixel tiled from y - 2 for 98 pixels, the
+    // last row overhanging a little).
     if (this.shop_spamton_bg_con > 0 && this.shop_spamton_bg_con < 3) {
-      draw_sprite_ext('spr_pixel_white', 0, cx, cy - 2, 640, 98, 0, 0xffffff, this.shop_spamton_bg_timer / 20);
+      draw_set_alpha(this.shop_spamton_bg_timer / 20);
+      draw_set_color(0xffffff);
+      draw_rectangle(cx, cy - 2, cx + 640, cy + 101, false);
+      draw_set_alpha(1);
     }
-    this.trackx += this.trackspeed;
-    if (this.trackx + 640 < cx) this.trackx += 640;
-    if (this.trackx - 640 > cx) this.trackx -= 640;
-    for (const ty of this.tracky) for (const k of [-640, 0, 640]) draw_sprite_ext('spr_sneo_track', 0, this.trackx + k, ty, 2, 2, 0, 0xffffff, this.image_alpha);
   }
 }
 defineObject('obj_ch2_sceneex2', SceneEx2);

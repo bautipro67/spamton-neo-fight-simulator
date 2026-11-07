@@ -5,9 +5,9 @@ import {
   Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf, merge_color, round,
   draw_sprite_ext, draw_self, draw_clear_alpha, surface_create, surface_set_target, surface_reset_target, surface_free,
   sprite_create_from_surface, sprite_exists, sprite_delete, getSprite, clamp,
-} from '../runtime/gm.js?v=20261107133820';
-import { first, scr_movetowards, heartRef } from './common.js?v=20261107133820';
-import { BulletParent } from './bullets.js?v=20261107133820';
+} from '../runtime/gm.js?v=20261107140756';
+import { first, scr_movetowards, heartRef } from './common.js?v=20261107140756';
+import { BulletParent } from './bullets.js?v=20261107140756';
 
 // Nine-slice borders of the stretchable box sprites (left, top, right, bottom).
 export function setupNineSlices() {
@@ -61,22 +61,18 @@ export class Growtangle extends BattleSolid {
     if (!this.init) {
       if (this.visible && (this.maxxscale !== 2 || this.maxyscale !== 2) && this.sprite_index === 'spr_battlebg_0') {
         this.customBox = true;
-        // The object's mask stays spr_battlebg_0 (scaled normally); only the look changes.
-        this.sprite_index = 'spr_battlebg_stretch_hitbox';
-        if (this.maxxscale % 2 !== 0) this.maxxscale = round(this.maxxscale * 37.5) / 37.5;
-        if (this.maxyscale % 2 !== 0) this.maxyscale = round(this.maxyscale * 37.5) / 37.5;
-        this.image_xscale = this.maxxscale / 2;
-        this.image_yscale = this.maxyscale / 2;
-        // A sprite of the box at half size (the nine-slice border stays 2 px), drawn at 2x while growing.
-        // The stretched sprite's origin scales with it, so it is drawn (and anchored) at 37 * scale;
-        // at a plain 37 the left and top borders fell outside the surface.
-        const ox = 37 * this.image_xscale, oy = 37 * this.image_yscale;
-        const surf = surface_create(this.sprite_width, this.sprite_height);
+        // Chapter 2: only fractional sizes are rounded (to 1/37.5); the box sprite is 75 x scale, drawn
+        // at 37 x scale with its origin at round(37.5 x scale). The mask stays spr_battlebg_0.
+        if (this.maxxscale % 1 !== 0) this.maxxscale = round(this.maxxscale * 37.5) / 37.5;
+        if (this.maxyscale % 1 !== 0) this.maxyscale = round(this.maxyscale * 37.5) / 37.5;
+        const tx = this.maxxscale / 2, ty = this.maxyscale / 2;
+        const surf = surface_create(75 * tx, 75 * ty);
         surface_set_target(surf);
         draw_clear_alpha(0, 0);
-        draw_sprite_ext('spr_battlebg_stretch', 0, ox, oy, this.image_xscale, this.image_yscale, 0, 0xffffff, 1);
+        draw_sprite_ext('spr_battlebg_stretch', 0, 37 * tx, 37 * ty, tx, ty, 0, 0xffffff, 1);
         surface_reset_target();
-        this.spr_custom_box = sprite_create_from_surface(surf, 0, 0, this.sprite_width, this.sprite_height, false, false, ox, oy);
+        this.spr_custom_box = sprite_create_from_surface(surf, 0, 0, 75 * tx, 75 * ty, false, false, round(37.5 * tx), round(37.5 * ty));
+        this.sprite_index = 'spr_battlebg_stretch_hitbox';
         surface_free(surf);
       }
       this.init = 1;
