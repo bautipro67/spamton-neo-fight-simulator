@@ -34,3 +34,7 @@ snd:snd_weaponpull_fast
 snd:snd_spamton_laugh
 snd:^snd_txtspam2?$
 snd:snd_hurt1
+# The Weird Route's scenes at the Dark Fountain (obj_fountainkris_ch2_sideb, obj_darkfountain_event).
+spr:spr_krisu_bright
+spr:spr_heart_centered
+snd:snd_revival

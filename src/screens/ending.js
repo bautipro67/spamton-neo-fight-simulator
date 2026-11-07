@@ -3,9 +3,9 @@
 import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_exists, draw_sprite_ext,
   draw_set_color, draw_set_font, draw_set_alpha, draw_rectangle,
-} from '../runtime/gm.js?v=20261107050450';
-import { snd_init, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107050450';
-import { gotoRoom, scr_darkbox, fadeOut, centerText } from './common.js?v=20261107050450';
+} from '../runtime/gm.js?v=20261107051915';
+import { snd_init, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107051915';
+import { gotoRoom, scr_darkbox, fadeOut, centerText } from './common.js?v=20261107051915';
 
 const BS = String.fromCharCode(92);
 const LINES = {
@@ -102,6 +102,8 @@ defineObject('obj_sim_ending', Ending);
 // startEnding(kind, { afterScene }): after the scene in room_dw_mansion_b_east_a the closing text is
 // left out (the scene has said it all).
 defineScript('startEnding', (kind, opts = {}) => {
+  // The Weird Route's own ending (src/sneo/scenes.js) comes first, unless the scenes are off.
+  if (kind == 'weird' && !opts.afterScene && G.settings?.scenes !== false && 'startWeirdPostScene' in S) return S.startWeirdPostScene();
   gotoRoom();
   global.fighting = 0;
   const e = instance_create(0, 0, 'obj_sim_ending');

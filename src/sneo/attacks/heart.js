@@ -9,14 +9,14 @@ import {
   global, Instance, defineObject, instance_create, instance_destroy, instancesOf, instance_number, objectExists,
   choose, random, random_range, lerp, lengthdir_x, lengthdir_y, point_direction, draw_sprite_ext, draw_self,
   draw_set_color, draw_line_width, snd_play, snd_volume, snd_is_playing, bgr, S,
-} from '../rt.js?v=20261107050450';
+} from '../rt.js?v=20261107051915';
 import {
   first, camerax, cameray, callOr, scr_bullet_init, scr_lerpvar, scr_marker, scr_script_delayed, scr_doom,
   lerp_ease_in, lerp_ease_out,
-} from '../common.js?v=20261107050450';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261107050450';
-import { POSES } from '../enemy.js?v=20261107050450';
-import { SneoBulletController } from './heads.js?v=20261107050450';
+} from '../common.js?v=20261107051915';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261107051915';
+import { POSES } from '../enemy.js?v=20261107051915';
+import { SneoBulletController } from './heads.js?v=20261107051915';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const ctrl = () => first('obj_sneo_bulletcontroller');
@@ -474,8 +474,8 @@ class WireHeart extends BasicBulletSneo {
     if (s && (this.altbiter === 1 || this.altbiter === 2)) s.makeheartalt = this.altbiter + 2;
     if (s && (this.type === 0 || (this.type === 1 && s.difficulty > 2))) {
       const m = s.myself;
-      // scr_sideb_get_phase() < 3 always holds on the normal route.
-      if (global.monsterhp[m] === global.monstermaxhp[m]) {
+      // No mercy on the Weird Route (scr_sideb_get_phase() > 2).
+      if (global.monsterhp[m] === global.monstermaxhp[m] && S.scr_sideb_get_phase() < 3) {
         const c = ctrl();
         if (c) c.mercyaccumulated += 3;
         const w = instance_create(global.monsterx[m], global.monstery[m] + 20 - global.hittarget[m] * 20, 'obj_dmgwriter');

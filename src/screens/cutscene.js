@@ -6,13 +6,13 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists, instancesOf,
   draw_sprite_ext, draw_set_color, draw_rectangle, lerp, point_distance, point_direction, lengthdir_x, lengthdir_y,
   random_range, clamp, left_h, right_h, up_h, down_h, button2_h,
-} from '../runtime/gm.js?v=20261107050450';
-import { assets } from '../runtime/assets.js?v=20261107050450';
+} from '../runtime/gm.js?v=20261107051915';
+import { assets } from '../runtime/assets.js?v=20261107051915';
 import {
   snd_play, snd_pitch, snd_volume, snd_init, mus_loop_ext, mus_volume, mus_stop, mus_pause, mus_resume,
-} from '../runtime/audio.js?v=20261107050450';
-import { scr_darkbox } from './common.js?v=20261107050450';
-import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261107050450';
+} from '../runtime/audio.js?v=20261107051915';
+import { scr_darkbox } from './common.js?v=20261107051915';
+import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261107051915';
 
 const VERSION = new URL(import.meta.url).search;
 const ROOMS_URL = new URL('../../assets/rooms/', import.meta.url).href;
@@ -259,6 +259,17 @@ class Fadeout extends Instance {
   }
 }
 defineObject('obj_fadeout', Fadeout);
+
+// obj_fadein: the screen starts black and clears at fadespeed (negative) per frame.
+class Fadein extends Instance {
+  create() { this.image_alpha = 1; this.fadespeed = -0.05; this.depth = -100; }
+  draw() {
+    this.image_alpha += this.fadespeed;
+    if (this.image_alpha <= 0) { instance_destroy(this); return; }
+    draw_sprite_ext('spr_pixel_white', 0, G.camX - 20, G.camY - 20, 170, 130, 0, 0, this.image_alpha);
+  }
+}
+defineObject('obj_fadein', Fadein);
 
 // scr_emote ("!"): a bubble over the actor's head for `time` frames.
 class ExcBlcon extends Instance {

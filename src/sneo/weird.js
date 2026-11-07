@@ -11,12 +11,12 @@ import {
   random, irandom, irandom_range, lerp, merge_color, make_color_hsv, round, bgr, button3_p,
   draw_sprite_ext, draw_sprite_tiled_ext, draw_set_color, draw_rectangle, snd_play, snd_stop, snd_pitch,
   snd_init, mus_loop, mus_pitch, mus_volume, mus_stop,
-} from './rt.js?v=20261107050450';
-import { first, camerax, cameray, i_ex, scr_ease_inout, snd_play_pitch, scr_bullet_init } from './common.js?v=20261107050450';
-import { SpamtonNeoEnemy, POSES, STEP_HOOKS, isphase, msgset, msgnext, writerExists, killWriters } from './enemy.js?v=20261107050450';
-import { DBulletController } from './dbullet.js?v=20261107050450';
-import { CollideBullet } from './bullets.js?v=20261107050450';
-import { scr_afterimage_cut } from './shots.js?v=20261107050450';
+} from './rt.js?v=20261107051915';
+import { first, camerax, cameray, i_ex, scr_ease_inout, snd_play_pitch, scr_bullet_init } from './common.js?v=20261107051915';
+import { SpamtonNeoEnemy, POSES, STEP_HOOKS, isphase, msgset, msgnext, writerExists, killWriters } from './enemy.js?v=20261107051915';
+import { DBulletController } from './dbullet.js?v=20261107051915';
+import { CollideBullet } from './bullets.js?v=20261107051915';
+import { scr_afterimage_cut } from './shots.js?v=20261107051915';
 
 const P = SpamtonNeoEnemy.prototype;
 const kris = () => first('obj_herokris');
@@ -420,16 +420,27 @@ class DarkFountain extends Instance {
     this.siner += 1;
     this.hscroll += 1;
     if (this.hscroll > 240) this.hscroll -= 240;
-    if (this.slowdown < 1) this.slowdown += 0.01;
-    this.siner -= this.slowdown * 0.5;
-    this.bgsiner -= this.slowdown / 24;
-    this.hscroll -= this.slowdown * 0.8;
-    const s = this.siner;
-    this.colcol = merge_color(this.nowcolor, hsv(s / 16, 160 + Math.sin(s / 128) * 60, 255), this.slowdown);
-    this.nowcolor = merge_color(this.nowcolor, hsv(s / 16, 255, Math.sin(s / 64) * 40 + 60), this.slowdown);
+    if (this.adjust === 0) {
+      // Before the fight (room_dw_mansion_fountain): the colors cycle.
+      const s = this.siner;
+      this.colcol = hsv(s / 4, 160 + Math.sin(s / 32) * 60, 255);
+      this.nowcolor = hsv(s / 4, 255, Math.sin(s / 16) * 40 + 60);
+    }
+    if (this.adjust === 3) {
+      // From the fight on: slower, and the colors drift.
+      if (this.slowdown < 1) this.slowdown += 0.01;
+      this.siner -= this.slowdown * 0.5;
+      this.bgsiner -= this.slowdown / 24;
+      this.hscroll -= this.slowdown * 0.8;
+      const s = this.siner;
+      this.colcol = merge_color(this.nowcolor, hsv(s / 16, 160 + Math.sin(s / 128) * 60, 255), this.slowdown);
+      this.nowcolor = merge_color(this.nowcolor, hsv(s / 16, 255, Math.sin(s / 64) * 40 + 60), this.slowdown);
+    }
     this.bgsiner += 0.0625;
     if (this.bgsiner > 7) this.bgsiner -= 7;
+    const s = this.siner;
     const cx = camerax(), cy = cameray(), c = this.colcol, b = this.bgsiner * 280 / 7;
+    // fountainbg (a full-screen marker at depth 2000000 that change_fountain_color tints).
     draw_set_color(this.nowcolor);
     draw_rectangle(cx, cy, cx + W, cy + 480, false);
     draw_sprite_tiled_ext('bg_fountain1', 0, cx - s, cy - s, 2, 2, c, 0.7 * this.eyebody);
@@ -447,6 +458,11 @@ class DarkFountain extends Instance {
     draw_sprite_ext('spr_fountainbottom', 0, cx + left, cy, 2, 2, 0, c, 1);
     draw_set_color(this.nowcolor);
     draw_rectangle(cx, cy + 280, cx + W, cy + 480, false);
+    // room_dw_mansion_fountain's TILES layer (depth 1000000, in front of the fountain): black outside
+    // the column x 200-440, so only the fountain's middle shows, in the fight too.
+    draw_set_color(0);
+    draw_rectangle(cx - 40, cy - 40, cx + 199, cy + 520, false);
+    draw_rectangle(cx + 440, cy - 40, cx + 680, cy + 520, false);
     draw_set_color(0xffffff);
   }
 }

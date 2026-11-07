@@ -10,16 +10,16 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instancesOf,
   draw_sprite_ext, draw_set_color, draw_set_alpha, draw_set_font, draw_text, draw_rectangle, lerp, random, random_range,
   controls,
-} from '../runtime/gm.js?v=20261107050450';
-import { keyName } from '../screens/controls.js?v=20261107050450';
-import { snd_play, snd_pitch, snd_stop, snd_init, mus_loop_ext, mus_volume, mus_stop, snd_free_all } from '../runtime/audio.js?v=20261107050450';
-import { POSES, SceneEx2 } from './enemy.js?v=20261107050450';
-import { tagParent, first, camerax, cameray, i_ex, snd_play_pitch, scr_afterimage, scr_dark_marker } from './common.js?v=20261107050450';
-import { startBattle } from '../battle/setup.js?v=20261107050450';
-import { gotoRoom } from '../screens/common.js?v=20261107050450';
+} from '../runtime/gm.js?v=20261107051915';
+import { keyName } from '../screens/controls.js?v=20261107051915';
+import { snd_play, snd_pitch, snd_stop, snd_init, mus_loop_ext, mus_volume, mus_stop, snd_free_all } from '../runtime/audio.js?v=20261107051915';
+import { POSES, SceneEx2 } from './enemy.js?v=20261107051915';
+import { tagParent, first, camerax, cameray, i_ex, snd_play_pitch, scr_afterimage, scr_dark_marker } from './common.js?v=20261107051915';
+import { startBattle } from '../battle/setup.js?v=20261107051915';
+import { gotoRoom } from '../screens/common.js?v=20261107051915';
 import {
   loadRoom, enterRoom, c, scr_cutscene_make, scr_maincharacters_actors, c_waitcustom_end, d_ex, lerpvar, moveToPoint,
-} from '../screens/cutscene.js?v=20261107050450';
+} from '../screens/cutscene.js?v=20261107051915';
 
 const BS = String.fromCharCode(92);
 const PARTS = ['spr_sneo_wingl', 'spr_sneo_arml', 'spr_sneo_legl', 'spr_sneo_legr', 'spr_sneo_body', 'spr_sneo_head', 'spr_sneo_armr', 'spr_sneo_wingr'];
@@ -666,6 +666,284 @@ class SpecialScene extends Instance {
 }
 defineObject('obj_ch2_sceneex2_special', SpecialScene);
 
+// ---------------------------------------------------------------- Weird Route: obj_fountainkris_ch2_sideb
+
+// room_dw_mansion_fountain: Kris rises in front of the Dark Fountain, then Spamton NEO drops in
+// ("NOT!!!"). global.tempflag[34] makes a retry play the short version.
+class FountainKris extends Instance {
+  create() {
+    snd_free_all();
+    Object.assign(this, {
+      sprite_index: 'spr_krisu_bright', image_speed: 0, image_xscale: 2, image_yscale: 2, siner: 0, imageanimator: 0,
+      con: 0, draw_kris: true, sneo: null, sneo_fall_sfx: false, sneo_fall_timer: 0,
+    });
+    global.interact = 1;
+    this.y += 260;
+    for (const k of instancesOf('obj_mainchara')) k.visible = false;
+    this.shortened = global.tempflag[34] === 1;
+    instance_create(0, 0, 'obj_fadein').fadespeed = this.shortened ? -0.5 : -0.005;
+    this.depth = 10;
+  }
+  alarm4() { this.con += 1; }
+  step() {
+    const kris = first('obj_mainchara');
+    if (this.con === 0) {
+      if (!this.shortened) {
+        this.con = 1;
+        this.alarm[4] = 220;
+      } else {
+        this.con = 9;
+        this.y -= 220;
+      }
+    }
+    if (this.con === 1) {
+      this.y -= 1;
+      this.image_index = this.imageanimator;
+      this.imageanimator += 0.1;
+    }
+    if (this.con === 2) {
+      this.image_index = 0;
+      this.con = 3;
+      this.alarm[4] = 60;
+    }
+    if (this.con === 4) {
+      this.con = 5;
+      global.typer = 42;
+      global.msg[0] = '(It was as if your very SOUL was glowing...)/%';
+      this.writer = instance_create(80, 80, 'obj_writer');
+    }
+    if (this.con === 5 && !(this.writer && this.writer.alive)) {
+      this.con = 7;
+      this.alarm[4] = 60;
+    }
+    if (this.con === 8) {
+      this.con = 9;
+      S.scr_speaker('sneo');
+      S.msgset(0, '* NOT!!!/%');
+      instance_create(0, 0, 'obj_dialoguer').side = 0;
+    }
+    if (this.con === 9 && !d_ex()) {
+      this.con = 10;
+      kris.x = this.x;
+      kris.y = this.y;
+      if (!this.sneo) {
+        const sn = this.sneo = instance_create(255, cameray() - 300, 'obj_spamton_neo_enemy');
+        Object.assign(sn, { myself: 1, facing: 1, gravity: 4, shadow_amount: 1, partmode: 30 });
+      }
+    }
+    const sn = this.sneo;
+    if (this.con === 10 && sn.y >= this.y - 140) {
+      this.con = 12;
+      this.alarm[4] = 60;
+      snd_play('snd_hurt1');
+      snd_play('snd_damage');
+      sn.gravity = 0;
+      sn.vspeed = 0;
+      this.draw_kris = false;
+      Object.assign(kris, { visible: true, fun: 1, sprite_index: 'spr_kris_dw_landed', image_index: 0, image_speed: 0 });
+      kris.hspeed = -20;
+      kris.friction = 0.8;
+      snd_play_pitch('snd_swing', 0.5);
+    }
+    if (this.con === 13) {
+      if (!this.shortened) {
+        if (sn.gravity === 0) snd_play_pitch('snd_swing', 0.5);
+        sn.gravity = -2;
+        if (sn.y <= cameray() - 200) {
+          this.con = 14;
+          sn.gravity = 0;
+          sn.x = 460;
+          sn.y = cameray() - 200;
+        }
+      } else {
+        this.con = 15;
+        this.alarm[4] = 60;
+        sn.partmode = 33;
+        lerpvar(sn, 'x', sn.x, sn.x + 200, 15, 1, 'out');
+      }
+    }
+    if (this.con === 14) {
+      sn.gravity = 4;
+      if (!this.sneo_fall_sfx && ++this.sneo_fall_timer === 15) {
+        this.sneo_fall_sfx = true;
+        snd_play_pitch('snd_swing', 0.5);
+      }
+      if (sn.y >= this.y - 140) {
+        this.con = 15;
+        this.alarm[4] = 60;
+        snd_play('snd_impact');
+        sn.gravity = 0;
+        sn.vspeed = 0;
+        sn.partmode = 33;
+      }
+    }
+    if (this.con === 16) {
+      this.con = 17;
+      scr_cutscene_make(this);
+      scr_maincharacters_actors(this, []);
+      c.mus('free_all');
+      c.mus2('initloop', 'spamton_neo_meeting.ogg', 0);
+      c.sel(this.kr);
+      c.facing('r');
+      c.var_lerp_instance(sn, 'shadow_amount', 1, 0, 30);
+      c.var_instance(sn, 'partmode', 1);
+      c.var_instance(sn, 'headforceframe', 1);
+      if (!this.shortened) {
+        const top = (...lines) => {
+          c.speaker('sneo');
+          c.msgsetloc(0, lines[0]);
+          for (const l of lines.slice(1)) c.msgnextloc(l);
+          c.msgside('top');
+          c.talk_wait();
+        };
+        top('* LET ME SAY/', '* LET ME SAY [Thanks ]/', '* THANKS TO YOUR [Total Jackass stunts] I HAVE [Becomed] NEO./',
+          "* AND NOW IT'S MY [Mansion]^1! MY [City]^1! MY [World]!/%");
+        c.var_instance(sn, 'partmode', 22);
+        c.var_instance(sn, 'headforceframe', 2);
+        top('* SO WHY ARE YOU [Stealing] THE [Fountain]!?/', '* TO [$!$!] ME OVER RIGHT AT THE [Good part]!? WHAT ARE YOU^1, A [Gameshow Host]!?/%');
+        c.var_instance(sn, 'partmode', 1);
+        c.var_instance(sn, 'headforceframe', 1);
+        top("* AH^1, KID^1, FORGET IT. I'M AN [HonestMan]./", "* I'LL LET YOU [Pay] YOUR WAY OUT OF THIS ONE!!/%");
+        c.var_instance(sn, 'partmode', 1);
+        c.var_instance(sn, 'headforceframe', 2);
+        top('* [Pay].../%');
+        c.wait(15);
+        c.var_instance(sn, 'partmode', 3);
+        c.var_instance(sn, 'headforceframe', 1);
+        c.wait(45);
+        c.speaker('sneo');
+        c.msgsetloc(0, '* WITH YOUR [Rapidly-Shrinking] LIFE!!!/%');
+        c.talk_wait();
+      } else {
+        c.var_instance(sn, 'partmode', 3);
+        c.var_instance(sn, 'headforceframe', 1);
+      }
+      c.wait(15);
+      c.var_instance(sn, 'partmode', 41);
+      c.soundplay('snd_sneo_laugh_long');
+      for (let n = 0; n < 10; n++) {
+        c.mus2('pitch', 1.3 + n / 15, 0);
+        c.wait(12);
+      }
+      c.mus('free');
+      c.wait(30);
+      c.actortokris();
+      c.terminatekillactors();
+    }
+    if (this.con === 17 && !i_ex('obj_cutscene_master')) {
+      this.con = 19;
+      global.tempflag[34] = 1;
+      const f = first('obj_darkfountain');
+      const fountain = f ? { siner: f.siner, bgsiner: f.bgsiner, hscroll: f.hscroll, nowcolor: f.nowcolor, colcol: f.colcol, adjust: 3, slowdown: 0 } : undefined;
+      startBattle({ intro: true, weird: true, from: [sn.x, sn.y], fountain, introStart: [[kris.x, kris.y], [0, 0], [0, 0]] });
+    }
+  }
+  // Draw_0: Kris in the fountain's light (a lit edge over a black figure, and a long shadow).
+  draw() {
+    if (!this.draw_kris) return;
+    const f = first('obj_darkfountain');
+    let blend = 0;
+    if (f) blend = f.colcol;
+    else {
+      draw_set_color(0);
+      draw_rectangle(camerax(), cameray(), camerax() + 640, cameray() + 480, false);
+    }
+    const spr = this.sprite_index, i = this.image_index;
+    draw_sprite_ext(spr, i, this.x, this.y - 4, 2, 2, 0, blend, 1);
+    draw_sprite_ext(spr, i, this.x, this.y + this.sprite_height * 4 - 8, 2, -6, 0, 0, 1);
+    draw_sprite_ext(spr, i, this.x, this.y, 2, 2, 0, 0, 1);
+  }
+}
+defineObject('obj_fountainkris_ch2_sideb', FountainKris);
+
+export function startWeirdPreScene() {
+  G.weird = true;
+  gotoRoom();
+  const tempflag = global.tempflag;
+  S.init_battle_globals();
+  global.tempflag = tempflag;
+  for (const k of ['monster', 'monsterat', 'monsterdf', 'monsterhp', 'monstermaxhp', 'mercymod', 'monsterx', 'monstery', 'hittarget', 'monstertype']) global[k] ??= [0, 0, 0];
+  global.fighting = 0;
+  global.facing = 2;
+  G.roomW = 640;
+  G.roomH = 480;
+  const kris = instance_create(0, 40, 'obj_mainchara');
+  kris.cutscene = 1;
+  instance_create(224, 0, 'obj_darkfountain').adjust = 0;
+  instance_create(300, 260, 'obj_fountainkris_ch2_sideb');
+}
+
+// ---------------------------------------------------------------- Weird Route: after the fight
+
+// obj_darkfountain_event in the dark (the fountain itself is gone): Kris's SOUL rises, light pours
+// in, white, then black (the end of the chapter).
+class FountainEvent extends Instance {
+  create() {
+    Object.assign(this, { sprite_index: 'spr_heart_centered', siner: 0, t: -10, con: 0, rs: 0, ds2: 0, ds3: 0, soundcon: 0 });
+    this.depth = -100000;
+    snd_play('snd_great_shine');
+  }
+  draw() {
+    this.siner += 1.5;
+    if (this.t >= 400) {
+      this.rs += 0.5;
+      draw_set_color(0xffffff);
+      for (let i = 1; i < 12; i++) {
+        draw_set_alpha(this.rs / 16 - i / 12);
+        draw_rectangle(320 - i * i - this.rs * i, 0, 320 + i * i + this.rs * i, 500, false);
+      }
+      draw_set_alpha(1);
+    }
+    const sp = this.siner, x = this.x, y = this.y;
+    draw_sprite_ext(this.sprite_index, 0, x, y, 1, 1, 0, 0xffffff, sp / 8);
+    draw_sprite_ext(this.sprite_index, 0, x, y, sp / 4, sp / 4, 0, 0xffffff, 1.6 - sp / 16);
+    draw_sprite_ext(this.sprite_index, 0, x, y, sp / 8, sp / 8, 0, 0xffffff, 1.6 - sp / 24);
+    this.t += 1;
+    if (this.t >= 20 && this.soundcon === 0) this.soundcon = 1; // snd_usefountain: not on the Weird Route
+    if (this.t >= 70 && this.t <= 240) this.y -= 1;
+    if (this.t >= 240 && this.t < 245) this.t = 300;
+    if (this.t >= 390 && this.t < 395) {
+      this.t = 400;
+      this.siner = 3;
+      if (this.soundcon === 1) {
+        this.soundcon = 2;
+        snd_play('snd_revival');
+      }
+    }
+    if (this.t >= 450) {
+      this.ds2 += 0.02;
+      draw_set_alpha(this.ds2);
+      draw_set_color(0xffffff);
+      draw_rectangle(-10, -10, 999, 999, false);
+      draw_set_alpha(1);
+    }
+    if (this.t >= 520) {
+      this.ds3 += 0.01;
+      draw_set_alpha(this.ds3);
+      draw_set_color(0);
+      draw_rectangle(-10, -10, 999, 999, false);
+      draw_set_alpha(1);
+    }
+    if (this.t >= 650 && this.con === 0) {
+      this.con = 1;
+      S.startEnding('weird', { afterScene: true });
+    }
+  }
+}
+defineObject('obj_darkfountain_event', FountainEvent);
+
+// obj_fountainkris_ch2_sideb con 21-23: 90 frames of black after the cold (obj_endbattle has
+// already used 35 of them), then obj_darkfountain_event where Kris stood.
+class WeirdAfter extends Instance {
+  create() { this.alarm[0] = 55; this.visible = false; }
+  alarm0() { instance_create(319, 339, 'obj_darkfountain_event'); }
+}
+defineObject('obj_sim_weird_after', WeirdAfter);
+export function startWeirdPostScene() {
+  gotoRoom();
+  instance_create(0, 0, 'obj_sim_weird_after');
+}
+
 // ---------------------------------------------------------------- starting the fight
 
 // BEGIN > NORMAL ROUTE (and every retry): the scene before the fight, or the fight right away when
@@ -691,6 +969,7 @@ export async function startPreScene() {
 }
 defineScript('startSneoFight', (opts = {}) => {
   if (opts.weird !== undefined) G.weird = !!opts.weird;
+  if (G.weird && G.settings?.scenes !== false) return startWeirdPreScene();
   if (!G.weird && G.settings?.scenes !== false) return startPreScene();
   return startBattle({ intro: G.settings?.intro !== false, weird: G.weird });
 });
@@ -847,3 +1126,4 @@ export async function startPostScene() {
   G.sneoAfterFight = false;
 }
 defineScript('startPostScene', startPostScene);
+defineScript('startWeirdPostScene', startWeirdPostScene);

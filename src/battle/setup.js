@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261107050450';
-import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107050450';
-import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107050450';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107050450';
-import { registerBackground } from './misc.js?v=20261107050450';
+} from '../runtime/gm.js?v=20261107051915';
+import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107051915';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107051915';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107051915';
+import { registerBackground } from './misc.js?v=20261107051915';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -511,6 +511,7 @@ const WEIRD_INTRO_START = [[300, 300], [0, 0], [0, 0]];
 // picks the Weird Route fight (a retry keeps the route it was started with).
 export function startBattle(opts = {}) {
   if (opts.weird !== undefined) G.weird = !!opts.weird;
+  G.sneoAfterFight = false; // set while the scene after a won fight takes over (src/sneo/scenes.js)
   const tempflag = global.tempflag ? global.tempflag.slice() : null;
   snd_free_all();
   room_reset();
@@ -526,11 +527,12 @@ export function startBattle(opts = {}) {
   // The party is still riding the coaster through the city when the battle starts, so the
   // backdrop (and the cars) are there from the first frame of the intro. The Weird Route fight
   // happens in front of the Dark Fountain instead.
-  if (G.weird) instance_create(0, 0, 'obj_darkfountain');
+  // From the scene at the fountain, the fountain carries on as it was (opts.fountain).
+  if (G.weird) Object.assign(instance_create(0, 0, 'obj_darkfountain'), opts.fountain ?? {});
   // From the scene before the fight the cityscape fades in (cityscape_alpha lerps to 1).
   else instance_create(0, 0, 'obj_ch2_sceneex2').cityscape_alpha = opts.from ? 0 : 1;
   if (G.settings?.simplify) global.flag[8] = 1;
-  const start = G.weird ? WEIRD_INTRO_START : INTRO_START;
+  const start = opts.introStart ?? (G.weird ? WEIRD_INTRO_START : INTRO_START);
   global.introx = start.map(p => p[0]);
   global.introy = start.map(p => p[1]);
   if (opts.intro === false) {
