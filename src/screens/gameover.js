@@ -5,10 +5,9 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists,
   withObj, button1_p, left_p, right_p, button2_h, draw_self, draw_sprite_ext, draw_set_color,
   draw_set_alpha, draw_set_font, draw_rectangle, draw_text, string_width, random, choose,
-} from '../runtime/gm.js?v=20261107040321';
-import { snd_play, snd_free_all, snd_init, mus_loop, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107040321';
-import { startBattle } from '../battle/setup.js?v=20261107040321';
-import { gotoRoom } from './common.js?v=20261107040321';
+} from '../runtime/gm.js?v=20261107050450';
+import { snd_play, snd_free_all, snd_init, mus_loop, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107050450';
+import { gotoRoom } from './common.js?v=20261107050450';
 
 // The battle as it looked when the party fell (sprite_create_from_surface).
 class Screenshot extends Instance {
@@ -63,7 +62,7 @@ class GameoverInit extends Instance {
       if (button1_p()) this.Z_COUNT += 1;
       if (this.Z_COUNT >= 4) {
         G.sneoGameovers = (G.sneoGameovers || 0) + 1;
-        startBattle({ intro: G.settings?.intro !== false });
+        S.startSneoFight();
         return;
       }
     }
@@ -226,7 +225,7 @@ class DeviceFailure extends Instance {
     }
     if (this.EVENT == 10) {
       this.EVENT = 11;
-      startBattle({ intro: G.settings?.intro !== false });
+      S.startSneoFight();
       return;
     }
     // GIVE UP: the music fades and the closing screen says "THEN THE WORLD WAS COVERED IN DARKNESS."

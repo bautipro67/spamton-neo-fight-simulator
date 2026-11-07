@@ -6,17 +6,17 @@ import {
   draw_sprite_ext, draw_set_color, draw_set_font, draw_set_alpha, draw_rectangle, draw_text, controls,
   draw_set_halign, draw_text_transformed, fa_center, fa_left,
   sprite_get_xoffset, sprite_get_yoffset, draw_line_width,
-} from '../runtime/gm.js?v=20261107040321';
-import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107040321';
-import { startBattle } from '../battle/setup.js?v=20261107040321';
-import * as SB from '../debug/sandbox.js?v=20261107040321';
-import { gotoRoom, fadeOut, centerText } from './common.js?v=20261107040321';
-import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261107040321';
-import { HATS, currentHat, drawHat } from '../hats.js?v=20261107040321';
-import { openEquipment } from './equipment.js?v=20261107040321';
-import { openControls, keyName } from './controls.js?v=20261107040321';
-import './gameover.js?v=20261107040321';
-import './ending.js?v=20261107040321';
+} from '../runtime/gm.js?v=20261107050450';
+import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107050450';
+import { startBattle } from '../battle/setup.js?v=20261107050450';
+import * as SB from '../debug/sandbox.js?v=20261107050450';
+import { gotoRoom, fadeOut, centerText } from './common.js?v=20261107050450';
+import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261107050450';
+import { HATS, currentHat, drawHat } from '../hats.js?v=20261107050450';
+import { openEquipment } from './equipment.js?v=20261107050450';
+import { openControls, keyName } from './controls.js?v=20261107050450';
+import './gameover.js?v=20261107050450';
+import './ending.js?v=20261107050450';
 
 // Dark panel over the title art, behind the OPTIONS and CONTROLS lists.
 class Panel extends Instance {
@@ -147,7 +147,7 @@ function routeMenu(music) {
   const menu = instance_create(MENU_X, MENU_Y, 'obj_sim_heartmenu');
   menu.setup(['NORMAL ROUTE', 'WEIRD ROUTE', 'BACK'], (i, m) => {
     if (i == 2) { instance_destroy(m); mainMenu(music, 0); return; }
-    return leave(music, () => startBattle({ intro: G.settings.intro, weird: i == 1 }));
+    return leave(music, () => S.startSneoFight({ weird: i == 1 }));
   }, 'fnt_mainbig', 28);
 }
 
@@ -218,16 +218,17 @@ function optionsMenu(music, cur = 0, panel = null) {
     () => 'SOUL HAT: < ' + currentHat().name + ' >',
     () => 'EASY MODE: ' + (G.settings.easy ? 'ON' : 'OFF'),
     () => 'INTRO: ' + (G.settings.intro ? 'ON' : 'OFF'),
+    () => 'SCENES: ' + (G.settings.scenes ? 'ON' : 'OFF'),
     () => 'SIMPLIFY VFX: ' + (G.settings.simplify ? 'ON' : 'OFF'),
     'CONTROLS',
     'BACK',
   ], (i, m) => {
-    if (i == 6) return back(m);
-    if (i == 5) {
+    if (i == 7) return back(m);
+    if (i == 6) {
       instance_destroy(m);
       panel.title = 'CONTROLS';
       panel.hatPreview = false;
-      openControls(() => optionsMenu(music, 5, panel));
+      openControls(() => optionsMenu(music, 6, panel));
       return;
     }
     m.done = false;
@@ -236,7 +237,8 @@ function optionsMenu(music, cur = 0, panel = null) {
     if (i == 1) setHat(1);
     if (i == 2) G.settings.easy = !G.settings.easy;
     if (i == 3) G.settings.intro = !G.settings.intro;
-    if (i == 4) {
+    if (i == 4) G.settings.scenes = !G.settings.scenes;
+    if (i == 5) {
       G.settings.simplify = !G.settings.simplify;
       global.flag[8] = G.settings.simplify ? 1 : 0;
     }

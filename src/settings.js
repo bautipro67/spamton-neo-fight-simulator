@@ -1,6 +1,6 @@
 // Player options and control bindings, remembered in this browser when storage is available.
-import { G, controls, setControls } from './runtime/gm.js?v=20261107040321';
-import { setMasterVolume } from './runtime/audio.js?v=20261107040321';
+import { G, controls, setControls } from './runtime/gm.js?v=20261107050450';
+import { setMasterVolume } from './runtime/audio.js?v=20261107050450';
 
 const SETTINGS_KEY = 'sneo-sim-settings';
 const CONTROLS_KEY = 'sneo-sim-controls';
@@ -13,7 +13,7 @@ function write(key, value) {
 }
 
 export function loadSettings() {
-  const defaults = { simplify: false, intro: true, easy: false, volume: 1, hat: 'NONE' };
+  const defaults = { simplify: false, intro: true, scenes: true, easy: false, volume: 1, hat: 'NONE' };
   G.settings = { ...defaults, ...(read(SETTINGS_KEY) || {}) };
   setControls(read(CONTROLS_KEY));
 }

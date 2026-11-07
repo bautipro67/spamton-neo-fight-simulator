@@ -27,7 +27,7 @@ async function bytes(path) {
   return r.arrayBuffer();
 }
 
-export const MUSIC_FILES = ['spamton_neo_meeting.ogg', 'spamton_neo_mix_ex_wip.ogg', 'AUDIO_DEFEAT.ogg', 'AUDIO_DRONE.ogg'];
+export const MUSIC_FILES = ['spamton_neo_meeting.ogg', 'spamton_neo_mix_ex_wip.ogg', 'AUDIO_DEFEAT.ogg', 'AUDIO_DRONE.ogg', 'shinkansen.ogg', 'spamton_neo_after.ogg'];
 
 // Graphics and text block startup; audio (see loadAudioInBackground) does not.
 export async function loadAssets(onProgress = () => {}) {

@@ -6,14 +6,14 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261107040321';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261107040321';
-import { scr_bulletspawner } from './dbullet.js?v=20261107040321';
+} from './rt.js?v=20261107050450';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261107050450';
+import { scr_bulletspawner } from './dbullet.js?v=20261107050450';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
-} from '../runtime/gm.js?v=20261107040321';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261107040321';
+} from '../runtime/gm.js?v=20261107050450';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261107050450';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -275,7 +275,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     this.partvisible_back = new Array(18).fill(1);
     Object.assign(this, {
       extra_vines: 26, lastwiretimer: 0, funnycheattimer: 0, funnycheattimer2: 0, funnycheattimer3: 0, headexpand: 0,
-      headforceframe: -1, fakegrav: 0, falltimer: 0, fallshake: 0, vineid: 0,
+      headforceframe: -1, fakegrav: 0, falltimer: 0, fallshake: 0, vineid: 0, shadow_amount: 0, shake_head: 0,
     });
     this.armlength = point_distance(this.partxoff[1], this.partyoff[1], 36, 146);
     for (const b of instancesOf('obj_battleback')) instance_destroy(b);
@@ -1056,6 +1056,13 @@ export class SpamtonNeoEnemy extends MonsterParent {
   // heads (headendcon), and the BIG SHOT penalty's red, honking, swelling head (funnycheat > 5).
   postPose(i) {
     const m = this.myself;
+    // shadow_amount darkens every part (1 = the silhouette he arrives as); while an obj_dbulletcontroller
+    // attack runs the head shows frame 3, a little darker.
+    if (this.shadow_amount >= 0) this.partblend[i] = merge_color(0xffffff, 0, this.shadow_amount);
+    if (i_ex('obj_dbulletcontroller')) {
+      this.partframe[5] = 3;
+      this.partblend[5] = this.blend;
+    } else if (this.partblend[5] === this.blend) this.partblend[5] = 0xffffff;
     let shakevar = 0;
     if (i === 0) {
       if (this.hurttimer2 > 0) {
@@ -1387,7 +1394,7 @@ defineObject('obj_sneo_flashrect', FlashRect);
 // obj_ch2_sceneex2 (the part of its Draw seen during the fight): the cityscape scrolling past
 // above the coaster tracks.
 const CITY = [['bg_dw_mansion_basement_cityscape_background', 1], ['bg_dw_mansion_basement_cityscape_midground', 1.1], ['bg_dw_mansion_basement_cityscape_foreground', 1.2]];
-class SceneEx2 extends Instance {
+export class SceneEx2 extends Instance {
   create() {
     this.depth = 99000;
     this.trackx = 0;

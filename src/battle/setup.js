@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261107040321';
-import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107040321';
-import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107040321';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107040321';
-import { registerBackground } from './misc.js?v=20261107040321';
+} from '../runtime/gm.js?v=20261107050450';
+import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107050450';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107050450';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107050450';
+import { registerBackground } from './misc.js?v=20261107050450';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -527,7 +527,8 @@ export function startBattle(opts = {}) {
   // backdrop (and the cars) are there from the first frame of the intro. The Weird Route fight
   // happens in front of the Dark Fountain instead.
   if (G.weird) instance_create(0, 0, 'obj_darkfountain');
-  else instance_create(0, 0, 'obj_ch2_sceneex2').cityscape_alpha = 1;
+  // From the scene before the fight the cityscape fades in (cityscape_alpha lerps to 1).
+  else instance_create(0, 0, 'obj_ch2_sceneex2').cityscape_alpha = opts.from ? 0 : 1;
   if (G.settings?.simplify) global.flag[8] = 1;
   const start = G.weird ? WEIRD_INTRO_START : INTRO_START;
   global.introx = start.map(p => p[0]);
@@ -543,6 +544,11 @@ export function startBattle(opts = {}) {
     const sneo = instance_create(global.monstermakex[0], global.monstermakey[0], global.monsterinstancetype[0]);
     sneo.myself = 0;
     sneo.waitingForBattle = true;
+    // scr_battle(61, 1, sneo): the Spamton NEO of the scene flies to his battle spot in 20 frames.
+    if (opts.from) {
+      [sneo.x, sneo.y] = opts.from;
+      sneo.moveOverTime(global.monstermakex[0], global.monstermakey[0], 20);
+    }
   }
   G.battleStarted = G.frame;
 }

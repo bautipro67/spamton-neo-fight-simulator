@@ -5,17 +5,17 @@ import {
   instance_number, withObj, random, button1_p, button2_h, string_length, string_char_at,
   string_insert, string_delete, draw_set_font, draw_set_color, draw_get_color, draw_set_alpha, draw_text,
   draw_text_transformed, draw_text_color, draw_rectangle, draw_sprite_ext, draw_self, button3_h, instancesOf,
-} from '../runtime/gm.js?v=20261107040321';
-import { snd_play } from '../runtime/audio.js?v=20261107040321';
+} from '../runtime/gm.js?v=20261107050450';
+import { snd_play } from '../runtime/audio.js?v=20261107050450';
 
 const sin = Math.sin;
-import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261107040321';
+import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261107050450';
 
 // Text sounds that exist in this build; the others are silent.
 const TEXTSND = {
   snd_text: 'snd_text', snd_txtsus: 'snd_txtsus', snd_txtral: 'snd_txtral', snd_txtjok: 'snd_txtjok',
 };
-import { G } from '../runtime/gm.js?v=20261107040321';
+import { G } from '../runtime/gm.js?v=20261107050450';
 const tsnd = n => TEXTSND[n] ?? null;
 
 // scr_textsetup(font, color, x, y, charline, shake, rate, sound, hspace, vspace, special)
@@ -72,6 +72,9 @@ function scr_texttype(w) {
     case 47: set(F('mainbig'), W, y, 33, 0, 1, 'snd_txtsus', 16, 28, 1); break;
     case 48: set(F('mainbig'), W, y, 33, 0, 1, 'snd_dadtxt', 16, 28, 1); break;
     case 50: set(F('dotumche'), 0, y, 33, 0, 1, 'snd_text', 9, 20, 0); break;
+    case 66: set(F('mainbig'), W, y, 33, 0, 1, 'snd_txtspam', 16, 36, 1); break; // Spamton (overworld)
+    case 67: set(F('mainbig'), W, y, 33, 0, 1, 'snd_txtspam2', 16, 36, 1); break; // Spamton NEO
+    case 68: set(F('dotumche'), 0, y, 33, 0, 1, 'snd_txtspam', 9, 20, 0); break;
     case 72: set(F('dotumche'), 0, y, 33, 0, 1, 'snd_txtspam2', 9, 20, 0); break;
     case 75: set(F('dotumche'), 0, y, 33, 0, 1, 'snd_txtsus', 9, 20, 0); break;
     case 80: set(F('mainbig'), W, y, 33, 0, 1, null, 16, 36, 1); break;
@@ -527,7 +530,7 @@ export class Writer extends Instance {
 }
 defineObject('obj_writer', Writer);
 
-// obj_face: draws the speaker's face in the battle box (Susie fc 1, Ralsei fc 2; Chapter 2+ sprites).
+// obj_face: draws the speaker's face in the text box (Susie fc 1, Ralsei fc 2; Chapter 2+ sprites).
 class FaceParent extends Instance {
   create() { this.depth = 10; this.mouthmove = 0; }
   draw() {}
@@ -557,7 +560,7 @@ class Face extends FaceParent {
       }
       if (global.fc == 2) {
         if (global.fe == 61) draw_sprite_ext('spr_face_placeholder', 0, this.x - 15, this.y - 10, f, f, 0, 0xffffff, 1);
-        else draw_sprite_ext('spr_face_r_dark', global.fe, this.x - 15, this.y - 10, f, f, 0, 0xffffff, 1);
+        else draw_sprite_ext('spr_face_r_nohat', global.fe, this.x - 15, this.y - 10, f, f, 0, 0xffffff, 1);
       }
     }
     this.nowface = global.fc;
@@ -805,6 +808,8 @@ defineScript('scr_speaker', (name) => {
     global.typer = global.fighting == 1 ? 45 : 31;
   }
   if (name == 'tenna') global.typer = global.fighting == 1 ? 81 : 80;
+  if (name == 'spamton') global.typer = global.fighting == 0 ? 66 : 68;
+  if (name == 'sneo') global.typer = 67;
 });
 
 // scr_anyface(speaker, msgno, emotion): a one-line message that switches the face.

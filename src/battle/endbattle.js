@@ -1,6 +1,6 @@
 // obj_endbattle: the party walks back to the overworld spots, then the simulator's ending screen
 // replaces the post-fight cutscene (obj_ch3_PTB02). obj_time also hands a pending game over to its screen.
-import { global, G, Instance, defineObject, S, point_direction, point_distance } from '../runtime/gm.js?v=20261107040321';
+import { global, G, Instance, defineObject, S, point_direction, point_distance } from '../runtime/gm.js?v=20261107050450';
 
 const g = global;
 
@@ -27,7 +27,8 @@ class EndBattle extends Instance {
     this.alarm[1] = 25;
   }
   alarm1() {
-    S.startEnding(G.weird ? 'weird' : 'win');
+    // After the normal-route fight obj_ch2_sceneex2 takes over (src/sneo/scenes.js).
+    if (!G.sneoAfterFight) S.startEnding(G.weird ? 'weird' : 'win');
   }
   draw() {}
 }

@@ -1,12 +1,11 @@
 // After the fight: a short closing text in the dark-world text box, then TRY AGAIN / TITLE.
-// TODO: the real after-battle cutscenes (Spamton's fall, the basement) are not reproduced.
+// After a normal-route win the scenes (src/sneo/scenes.js) come first and this screen only offers the menu.
 import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_exists, draw_sprite_ext,
   draw_set_color, draw_set_font, draw_set_alpha, draw_rectangle,
-} from '../runtime/gm.js?v=20261107040321';
-import { snd_init, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107040321';
-import { startBattle } from '../battle/setup.js?v=20261107040321';
-import { gotoRoom, scr_darkbox, fadeOut, centerText } from './common.js?v=20261107040321';
+} from '../runtime/gm.js?v=20261107050450';
+import { snd_init, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107050450';
+import { gotoRoom, scr_darkbox, fadeOut, centerText } from './common.js?v=20261107050450';
 
 const BS = String.fromCharCode(92);
 const LINES = {
@@ -61,7 +60,7 @@ class Ending extends Instance {
     this.t += 1;
     if (this.con == 0 && this.t >= 45) {
       this.con = 1;
-      this.say(d.msg);
+      if (!this.afterScene) this.say(d.msg);
     }
     if (this.con == 1 && !instance_exists(this.writer)) {
       this.con = 3;
@@ -72,7 +71,7 @@ class Ending extends Instance {
         mus_volume(this.music, 0, 20);
         fadeOut(20, () => {
           mus_stop(this.music);
-          if (i == 0) startBattle({ intro: G.settings?.intro !== false });
+          if (i == 0) S.startSneoFight();
           else S.startTitle();
         });
       }, 'fnt_mainbig', 32);
@@ -100,9 +99,13 @@ class Ending extends Instance {
 }
 defineObject('obj_sim_ending', Ending);
 
-defineScript('startEnding', (kind) => {
+// startEnding(kind, { afterScene }): after the scene in room_dw_mansion_b_east_a the closing text is
+// left out (the scene has said it all).
+defineScript('startEnding', (kind, opts = {}) => {
   gotoRoom();
   global.fighting = 0;
   const e = instance_create(0, 0, 'obj_sim_ending');
   e.kind = LINES[kind] ? kind : 'win';
+  if (opts.afterScene) e.t = 44;
+  e.afterScene = !!opts.afterScene;
 });
