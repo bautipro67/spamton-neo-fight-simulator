@@ -1,10 +1,10 @@
 // obj_heroparent and the three party members: poses, attack hit (Alarm_1), spell/item cast (Alarm_4).
 import {
-  global, Instance, defineObject, S, instance_create, instance_exists, withObj, random, round, ceil,
+  global, Instance, defineObject, S, instance_create, instance_exists, instancesOf, withObj, random, round, ceil,
   merge_color, draw_sprite_ext, d3d_set_fog, sprite_get_number,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_play, snd_stop, snd_pitch } from '../runtime/audio.js?v=20261107001913';
-import { withInst, knightEnemy } from './common.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_play, snd_stop, snd_pitch } from '../runtime/audio.js?v=20261107040321';
+import { withInst, knightEnemy } from './common.js?v=20261107040321';
 
 const g = global;
 
@@ -248,6 +248,9 @@ export class HeroParent extends Instance {
     if (this.cancelattack != 0) return;
     const t = g.chartarget[me];
     let damage = round(g.battleat[me] * this.points / 20 - g.monsterdf[t] * 3);
+    // Chapter 2: once Spamton NEO's Weird Route end has begun, a FIGHT only does 5 to 10.
+    const sneo = instancesOf('obj_spamton_neo_enemy')[0];
+    if (sneo && sneo.weirdpathendcon > 0) damage = Math.min(10, Math.max(5, round(g.battleat[me] * this.points / 150)));
     if (knight) {
       damage = ceil(damage * knight.damagereduction);
       if (this.object_index == 'obj_herokris') {

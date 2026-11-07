@@ -1,19 +1,19 @@
 // SPAMTON NEO: obj_spamton_neo_enemy (Create, Step, End Step, Draw, Alarm_4/6, Other_10/13/14/22),
-// normal route only (scr_sideb_get_phase() <= 2), plus the fight's backdrop (obj_ch2_sceneex2's
+// (the Weird Route's branches are in weird.js: scr_sideb_get_phase() > 2), plus the fight's backdrop (obj_ch2_sceneex2's
 // cityscape and tracks), the party's coaster cars (o_coaster_hero_sneo) and obj_sneo_hitdetector.
 // Battle-system scripts come from the battle modules through S (scr_enemyblcon, scr_battletext_default,
 // scr_nextact, scr_mercyadd, scr_monstersetup...).
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261107001913';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261107001913';
-import { scr_bulletspawner } from './dbullet.js?v=20261107001913';
+} from './rt.js?v=20261107040321';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261107040321';
+import { scr_bulletspawner } from './dbullet.js?v=20261107040321';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261107040321';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -132,30 +132,30 @@ defineObject('obj_sneo_vine_transition', VineTransition);
 
 const MonsterParent = tagParent('obj_monsterparent');
 
-const isphase = callOr('scr_isphase', p => {
+export const isphase = callOr('scr_isphase', p => {
   if (p === 'menu') return global.myfight === 0;
   if (p === 'acting') return global.myfight === 3;
   if (p === 'enemytalk' || p === 'balloon') return global.mnfight === 1;
   if (p === 'bullets' || p === 'enemyattack') return global.mnfight === 2;
   return false;
 });
-const turntimer = callOr('scr_turntimer', t => { if (global.turntimer < t) global.turntimer = t; });
+export const turntimer = callOr('scr_turntimer', t => { if (global.turntimer < t) global.turntimer = t; });
 const moveheart = callOr('scr_moveheart', () => {
   const k = first('obj_herokris');
   return instance_create(k ? k.x + 10 : camerax() + 90, k ? k.y + 40 : cameray() + 140, 'obj_moveheart');
 });
-function msgset(n, s) {
+export function msgset(n, s) {
   global.msg ??= [];
   global.msg[n] = s;
   global.msgno = n;
   for (let i = n + 1; i < global.msg.length; i++) global.msg[i] = '%%';
 }
-function msgnext(s) {
+export function msgnext(s) {
   global.msgno = (global.msgno ?? 0) + 1;
   global.msg[global.msgno] = s;
 }
-const writerExists = () => i_ex('obj_writer');
-const killWriters = () => { for (const w of instancesOf('obj_writer')) instance_destroy(w); };
+export const writerExists = () => i_ex('obj_writer');
+export const killWriters = () => { for (const w of instancesOf('obj_writer')) instance_destroy(w); };
 export const sneoEnemy = () => first('obj_spamton_neo_enemy');
 
 // Hooks for the attack modules (so they never need to edit this file):
@@ -170,7 +170,7 @@ export const POSES = {}, POSE_BEFORE = {}, POSE_AFTER = {}, STEP_HOOKS = [];
 const RR_OBJECTS = {
   0: ['obj_sneo_guymaker'], 1: ['obj_pipis_controller'], 2: ['obj_sneo_wireheart'], 3: ['obj_pipis_controller'],
   6: ['obj_sneo_wall_controller_new'], 7: ['obj_sneo_faceattack'], 8: ['obj_sneo_phonecall'],
-  8.5: ['obj_sneo_phonehand_master'], 9: ['obj_sneo_final_forme'],
+  8.5: ['obj_sneo_phonehand_master'], 9: ['obj_sneo_final_forme'], 5: ['obj_sneo_weird_end_pipis'],
 };
 export const PORTED_RR = { has: rr => !!RR_OBJECTS[rr] && RR_OBJECTS[rr].every(objectExists) };
 
@@ -279,7 +279,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     });
     this.armlength = point_distance(this.partxoff[1], this.partyoff[1], 36, 146);
     for (const b of instancesOf('obj_battleback')) instance_destroy(b);
-    if (!i_ex('obj_ch2_sceneex2')) instance_create(0, 0, 'obj_ch2_sceneex2');
+    if (!G.weird && !i_ex('obj_ch2_sceneex2')) instance_create(0, 0, 'obj_ch2_sceneex2');
     global.tempflag ??= [];
   }
   cleanUp() { global.invc = 1; }
@@ -332,6 +332,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
       this.haveusedfinalattack = 1;
       this.phaseturn = 3;
     }
+    if (this.weirdpathendcon > 0) this.rr = 5;
   }
   // The attack that actually plays: an rr whose objects are not ported yet falls back to Flying
   // Heads, harder from phase 3 on (his line still follows the real rr).
@@ -369,8 +370,9 @@ export class SpamtonNeoEnemy extends MonsterParent {
     const m = this.myself;
     if (this.bigshot === 1) global.sp = 5;
     if (global.fighting !== 1 || this.endcon >= 11) return;
+    if (G.weird) this.weirdPreStep();
     if (global.monster[m] === 1 && this.endcon === 0) {
-      if (isphase('enemytalk') && this.talked === 0 && global.monsterhp[m] <= 0) {
+      if (!G.weird && isphase('enemytalk') && this.talked === 0 && global.monsterhp[m] <= 0) {
         this.talked = -1;
         this.endcon = 1;
       }
@@ -400,7 +402,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     const m = this.myself;
     S.scr_randomtarget(this);
     if (!instance_exists('obj_darkener')) instance_create(0, 0, 'obj_darkener');
-    if (this.turn > 14 && global.monsterdf[m] > -10) global.monsterdf[m] -= 3;
+    if (this.turn > 14 && (this.weirdpathendcon ?? 0) === 0 && global.monsterdf[m] > -10) global.monsterdf[m] -= 3;
     this.ballooncon = 0;
     this.balloonend = 1;
     this.talkedcon = 0;
@@ -413,21 +415,24 @@ export class SpamtonNeoEnemy extends MonsterParent {
     if (this.difficultydebug >= 0) this.difficulty = this.difficultydebug;
     const final = this.haveusedfinalattack, rr = this.rr, d = this.difficulty;
     const say = (s, con) => { msgset(0, s); this.ballooncon = con; this.balloonend = con === 0 ? 1 : 0; };
-    if (rr === 0 && d === 1 && !final) say("KRIS! ISN'T THIS&[Body] JUST [Heaven]LY!?/%", 1);
-    else if (rr === 6 && d === 0 && !final) say("WE'LL TURN THOSE&[Schmoes] AND [Daves]&INTO [Rosen Graves]/%", 2);
-    else if (rr === 8 && d === 0 && !final) say('ALL YOU GOTTA&DO IS [Big]./%', 3);
-    else if (rr === 2 && d === 0 && !final) say("KRIS, DON'T YOU&WANNA BE [Part]&OF MY BEAUTIFUL [Heart]?!/%", 4);
-    else if (rr === 8.5 && d === 0 && !final) say("IT'S CALLING, KRIS...&MY [Heart]...&MY [Hands].../%", 0);
-    else if (rr === 7 && this.faceattackcount === 0 && !final) say('KRIS!&CAN YOU REALLY&LOOK IN MY [Eyes]&AND SAY NO!?/%', 5);
-    else if (rr === 0 && d === 3 && !final) say("KRIS, I'LL EVEN&GIVE YOU A&[Free Value]/%", 6);
-    else if (rr === 2 && d === 2 && !final) say("I CAN'T STAND IT!!!&I THINK I'M GONNA&HAVE A [HeartAttack]!/%", 0);
-    else if (rr === 8 && d === 1 && !final) say("DON'T YOU&WANNA HELP YOUR&OLD PAL SPAMTON?/%", 7);
-    else if (rr === 8.5 && d === 2 && !final) say('[Friends]!? KRIS!?&WHAT ARE YOU&TALKING ABOUT!?/%', 8);
-    else if (rr === 7 && this.faceattackcount === 1 && !final) say('KRIS. IF YOU GIVE&ME THAT [Soul] I&WILL GIVE YOU&EVERYTHING I HAVE./%', 10);
-    else if (rr === 6 && d === 1 && !final) say("BUT KRIS, IF YOU&REFUSE. THAT'S YOUR&CHOICE. I CAN'T&FORCE YOU./%", 11);
-    else if (rr === 2 && d === 1 && !final) say('KRIS!!! TAKE THE&DEAL!!! TAKE IT!!!/%', 12);
-    else if (rr === 8 && d === 3 && !final) say('OR...&DID YOU WANT&TO BE.../%', 13);
-    else if (rr === 9 && this.finalattackconversationcon === 0) {
+    const weirdside = S.scr_sideb_get_phase() > 2 ? 1 : 0;
+    if (weirdside && this.weirdpathendcon > 0) this.weirdEndTalk(say);
+    else if (weirdside && this.balloonorder < 10 && !final) this.weirdTalk(say);
+    else if (rr === 0 && d === 1 && !final && !weirdside) say("KRIS! ISN'T THIS&[Body] JUST [Heaven]LY!?/%", 1);
+    else if (rr === 6 && d === 0 && !final && !weirdside) say("WE'LL TURN THOSE&[Schmoes] AND [Daves]&INTO [Rosen Graves]/%", 2);
+    else if (rr === 8 && d === 0 && !final && !weirdside) say('ALL YOU GOTTA&DO IS [Big]./%', 3);
+    else if (rr === 2 && d === 0 && !final && !weirdside) say("KRIS, DON'T YOU&WANNA BE [Part]&OF MY BEAUTIFUL [Heart]?!/%", 4);
+    else if (rr === 8.5 && d === 0 && !final && !weirdside) say("IT'S CALLING, KRIS...&MY [Heart]...&MY [Hands].../%", 0);
+    else if (rr === 7 && this.faceattackcount === 0 && !final && !weirdside) say('KRIS!&CAN YOU REALLY&LOOK IN MY [Eyes]&AND SAY NO!?/%', 5);
+    else if (rr === 0 && d === 3 && !final && !weirdside) say("KRIS, I'LL EVEN&GIVE YOU A&[Free Value]/%", 6);
+    else if (rr === 2 && d === 2 && !final && !weirdside) say("I CAN'T STAND IT!!!&I THINK I'M GONNA&HAVE A [HeartAttack]!/%", 0);
+    else if (rr === 8 && d === 1 && !final && !weirdside) say("DON'T YOU&WANNA HELP YOUR&OLD PAL SPAMTON?/%", 7);
+    else if (rr === 8.5 && d === 2 && !final && !weirdside) say('[Friends]!? KRIS!?&WHAT ARE YOU&TALKING ABOUT!?/%', 8);
+    else if (rr === 7 && this.faceattackcount === 1 && !final && !weirdside) say('KRIS. IF YOU GIVE&ME THAT [Soul] I&WILL GIVE YOU&EVERYTHING I HAVE./%', 10);
+    else if (rr === 6 && d === 1 && !final && !weirdside) say("BUT KRIS, IF YOU&REFUSE. THAT'S YOUR&CHOICE. I CAN'T&FORCE YOU./%", 11);
+    else if (rr === 2 && d === 1 && !final && !weirdside) say('KRIS!!! TAKE THE&DEAL!!! TAKE IT!!!/%', 12);
+    else if (rr === 8 && d === 3 && !final && !weirdside) say('OR...&DID YOU WANT&TO BE.../%', 13);
+    else if (rr === 9 && this.finalattackconversationcon === 0 && !weirdside) {
       say("KRIS...&I WON'T FORCE YOU.&I CAN'T.&I CAN'T FORCE YOU./%", 25);
       this.finalattackconversationcon = 1;
     } else {
@@ -455,7 +460,8 @@ export class SpamtonNeoEnemy extends MonsterParent {
     this.talktimer += 1;
     if (!((button3_p() && this.talktimer > 15) || !writerExists())) return;
     killWriters();
-    const next = BALLOON[this.ballooncon];
+    const from = this.ballooncon;
+    const next = BALLOON[from] ?? this.weirdBalloon?.(from);
     if (next) {
       const [s, con] = Array.isArray(next) ? next : [next, 0];
       msgset(0, s);
@@ -467,7 +473,8 @@ export class SpamtonNeoEnemy extends MonsterParent {
     }
     this.talked = 0.7;
     this.talktimer = 0;
-    this.balloon();
+    if (this.ballooncon === 32) S.scr_battletext_default(this);
+    else this.balloon();
     this.alarm[6] = 1;
   }
   // talkedcon == 1: the balloon is done; the box (sized per attack) and the SOUL come in.
@@ -494,6 +501,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
       else if (rr === 8.5) { g.x += 64; g.y += 8; g.maxxscale = 3.2; g.maxyscale = 1.5; }
       else if (rr === 6) { g.x += 58; g.maxxscale = 10 / 3; g.maxyscale = 2.3; this.rememberAndMove(this.x + 200, this.y, 16); }
       else if (rr === 9) { g.y += 10; g.maxyscale = 1.9; g.maxxscale = 2.5; }
+      if (rr === 5) this.rememberAndMove(this.x + 200, this.y, 8);
     }
     if (!instance_exists('obj_moveheart') && !instance_exists('obj_heart')) moveheart();
   }
@@ -545,7 +553,13 @@ export class SpamtonNeoEnemy extends MonsterParent {
       else { if (this.phoneevent >= 1) dc.skipintro = 1; this.phoneevent += 1; }
     } else if (rr === 8.5) spawn('Phonehands', 8.5);
     else if (rr === 9) spawn('NeoFinale', 9).target = 3;
-    else spawn('UnspecifiedSneoAttack', rr);
+    else if (rr === 5) {
+      global.monsterattackname[m] = 'PipisExplosion';
+      const dc = scr_bulletspawner(this, this.x, this.y, 'obj_dbulletcontroller');
+      dc.type = 51;
+      dc.damage = 3;
+      dc.btimer = 35 - random(30);
+    } else spawn('UnspecifiedSneoAttack', rr);
     if (this.rr === 7) this.faceattackcount += 1;
     S.scr_heartcolor('yellow');
     for (const h of instancesOf('obj_heart')) h.wspeed = global.sp;
@@ -567,7 +581,12 @@ export class SpamtonNeoEnemy extends MonsterParent {
   statusText() {
     const m = this.myself;
     this.statustextupdate = 1;
-    if (global.monsterhp[m] < global.monstermaxhp[m] * 0.1 && this.haveusedfinalattack === 0) global.battlemsg[0] = '* Spamton looks to the heavens.';
+    if (this.weirdpathendcon > 0) {
+      if (global.monsterhp[m] < global.monstermaxhp[m] * 0.06) {
+        global.battlemsg[0] = '* Spamton NEO recovered HP with Pipis!';
+        global.monsterhp[m] = global.monstermaxhp[m] * 0.06;
+      } else global.battlemsg[0] = "* Spamton NEO's DEFENSE is towering.";
+    } else if (global.monsterhp[m] < global.monstermaxhp[m] * 0.1 && this.haveusedfinalattack === 0) global.battlemsg[0] = '* Spamton looks to the heavens.';
     else if (this.bigshot === 1 && this.bigshotused === 0 && global.monsterhp[m] > global.monstermaxhp[m] * 0.7) {
       global.battlemsg[0] = `* Hold and release ${G.confirmKeyName ? G.confirmKeyName() : 'Z'} to fire a BIG SHOT!`;
     } else if (this.bigshot === 1 && this.bigshotused === 1) {
@@ -594,6 +613,17 @@ export class SpamtonNeoEnemy extends MonsterParent {
   }
   // ACTs: Check, Snap, SnapAll; Susie: Snap, Supercharge; Ralsei: Snap, FluffyGuard.
   stepActs() {
+    if (G.weird) this.weirdActs();
+    else this.normalActs();
+    if ((this.actcon === 1 && !writerExists()) || this.actconsus === 20 || this.actconral === 20) {
+      this.usedact = 1;
+      if (global.mercymod[this.myself] > 99 && this.endcon === 0) {
+        this.endcon = 1;
+        this.actcon = 0;
+      } else if (this.endcon === 0) S.scr_nextact(this);
+    }
+  }
+  normalActs() {
     if (this.acting === 1 && this.actcon === 0) {
       this.actcon = 1;
       if (this.checkcount === 0) {
@@ -661,13 +691,6 @@ export class SpamtonNeoEnemy extends MonsterParent {
         S.scr_battletext_default(this);
         this.fluffHeal();
       }
-    }
-    if ((this.actcon === 1 && !writerExists()) || this.actconsus === 20 || this.actconral === 20) {
-      this.usedact = 1;
-      if (global.mercymod[this.myself] > 99 && this.endcon === 0) {
-        this.endcon = 1;
-        this.actcon = 0;
-      } else if (this.endcon === 0) S.scr_nextact(this);
     }
   }
   // The "Too many fluff balls" heal: +10 HP (not capped at max HP) to whoever of Susie, Ralsei and
@@ -1284,6 +1307,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     // Body parts: Draw_0's poses (attack modules add theirs through POSES / POSE_BEFORE / POSE_AFTER).
     if (this.partmode === 10) this.partmode = 9;
     if (this.partmode !== 34) this.heartattackoffsetx = 0;
+    if (this.specialcon === 1) this.specialFlames();
     POSE_BEFORE[this.partmode]?.(this);
     for (let i = 0; i < 8; i++) {
       const hook = POSES[this.partmode];

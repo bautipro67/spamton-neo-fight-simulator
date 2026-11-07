@@ -5,10 +5,10 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists,
   withObj, button1_p, left_p, right_p, button2_h, draw_self, draw_sprite_ext, draw_set_color,
   draw_set_alpha, draw_set_font, draw_rectangle, draw_text, string_width, random, choose,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_play, snd_free_all, snd_init, mus_loop, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107001913';
-import { startBattle } from '../battle/setup.js?v=20261107001913';
-import { gotoRoom } from './common.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_play, snd_free_all, snd_init, mus_loop, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107040321';
+import { startBattle } from '../battle/setup.js?v=20261107040321';
+import { gotoRoom } from './common.js?v=20261107040321';
 
 // The battle as it looked when the party fell (sprite_create_from_surface).
 class Screenshot extends Instance {
@@ -192,8 +192,11 @@ class DeviceFailure extends Instance {
         this.alarm[4] = 30;
         this.music = snd_init('AUDIO_DEFEAT.ogg');
         mus_loop(this.music);
-        const [typer, lines] = VOICES[choose(0, 1)];
-        this.writer(50, 150, lines, typer);
+        // Nobody speaks when Kris fights alone (the Weird Route).
+        if (global.char?.[1] || global.char?.[2]) {
+          const [typer, lines] = VOICES[choose(0, 1)];
+          this.writer(50, 150, lines, typer);
+        }
       }
     }
     if (this.EVENT == 0) this.EVENT = 1;

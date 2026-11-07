@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107001913';
-import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107001913';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107001913';
-import { registerBackground } from './misc.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107040321';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107040321';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107040321';
+import { registerBackground } from './misc.js?v=20261107040321';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -118,10 +118,15 @@ function scr_gamestart() {
   global.flag[32] = 0;
 }
 
+// scr_sideb_get_phase(): how far the Weird Route has gone (global.flag[915]). The simulator's
+// WEIRD ROUTE mode is the fight at the Dark Fountain, phase 3; the normal route is phase 0.
+defineScript('scr_sideb_get_phase', () => (G.weird ? 3 : 0));
+
 // Everything the Spamton NEO fight needs on top of scr_gamestart, as in obj_ch2_sceneex2 (con 7).
+// The Weird Route fight (obj_fountainkris_ch2_sideb con 17) has Kris alone.
 defineScript('init_battle_globals', () => {
   scr_gamestart();
-  global.char = [1, 2, 3];
+  global.char = G.weird ? [1, 0, 0] : [1, 2, 3];
   global.darkzone = 1;
   global.plot = 200;
   // The equipment and items chosen on the EQUIPMENT screen (src/battle/equipment.js).
@@ -341,6 +346,7 @@ defineScript('scr_encountersetup', (...a) => {
     g.monstertype[2] = 0;
     g.heromakex[0] = xx + 80;
     g.heromakey[0] = yy + 60;
+    if (S.scr_sideb_get_phase() > 2) g.heromakey[0] = yy + 173;
     g.battlemsg[0] = "* It's time to be a BIG SHOT!";
   }
 });
@@ -434,6 +440,19 @@ defineScript('scr_monstersetup', (inst) => {
     g.mercymax[m] = 100;
     g.canact[m][0] = 1;
     g.actname[m][0] = 'Check';
+    if (S.scr_sideb_get_phase() > 2) {
+      // Weird Route: no wires to snap, Kris's own TP moves instead, and far less defense.
+      g.monsterdf[m] = -27;
+      g.canact[m][1] = 1;
+      g.actname[m][1] = 'X-Slash';
+      g.actdesc[m][1] = 'Physical#damage';
+      g.actcost[m][1] = 62;
+      g.canact[m][2] = 1;
+      g.actname[m][2] = 'FriedPipis';
+      g.actdesc[m][2] = 'Heals#120 HP';
+      g.actcost[m][2] = 80;
+      return;
+    }
     g.canact[m][1] = 1;
     g.actname[m][1] = 'Snap';
     g.actdesc[m][1] = '';
@@ -485,8 +504,13 @@ defineObject('obj_time', ObjTime);
 // (1721, 60), (1718, 125) and (1727, 215) with Ralsei's character_offset_x -10.
 const INTRO_START = [[81, 60], [78, 125], [77, 210]]; // the coasters' seats (camera at x 1640)
 
-// Starts a fresh Spamton NEO fight: opts.intro = false skips the encounter transition.
+// Where Kris stands before the Weird Route fight: in front of the Dark Fountain.
+const WEIRD_INTRO_START = [[300, 300], [0, 0], [0, 0]];
+
+// Starts a fresh Spamton NEO fight: opts.intro = false skips the encounter transition; opts.weird
+// picks the Weird Route fight (a retry keeps the route it was started with).
 export function startBattle(opts = {}) {
+  if (opts.weird !== undefined) G.weird = !!opts.weird;
   const tempflag = global.tempflag ? global.tempflag.slice() : null;
   snd_free_all();
   room_reset();
@@ -500,11 +524,14 @@ export function startBattle(opts = {}) {
   }
   instance_create(0, 0, 'obj_time');
   // The party is still riding the coaster through the city when the battle starts, so the
-  // backdrop (and the cars) are there from the first frame of the intro.
-  instance_create(0, 0, 'obj_ch2_sceneex2').cityscape_alpha = 1;
+  // backdrop (and the cars) are there from the first frame of the intro. The Weird Route fight
+  // happens in front of the Dark Fountain instead.
+  if (G.weird) instance_create(0, 0, 'obj_darkfountain');
+  else instance_create(0, 0, 'obj_ch2_sceneex2').cityscape_alpha = 1;
   if (G.settings?.simplify) global.flag[8] = 1;
-  global.introx = INTRO_START.map(p => p[0]);
-  global.introy = INTRO_START.map(p => p[1]);
+  const start = G.weird ? WEIRD_INTRO_START : INTRO_START;
+  global.introx = start.map(p => p[0]);
+  global.introy = start.map(p => p[1]);
   if (opts.intro === false) {
     S.scr_encountersetup(global.encounterno);
     instance_create(0, 0, 'obj_battlecontroller');

@@ -8,13 +8,13 @@ import {
   instancesOf, event_user, choose, keyboard_check, keyboard_check_pressed, random_set_seed, round, S,
   draw_set_font, draw_set_halign, draw_set_color, draw_set_alpha, draw_rectangle, draw_text, draw_sprite_ext,
   fa_left, fa_center, merge_color, button1_p, vk, draw_self,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_play, snd_init, mus_loop_ext, mus_stop, snd_stop } from '../runtime/audio.js?v=20261107001913';
-import { audioReady, assets } from '../runtime/assets.js?v=20261107001913';
-import { gotoRoom } from '../screens/common.js?v=20261107001913';
-import { getBest, saveBest } from '../settings.js?v=20261107001913';
-import { drawSoulHat } from '../hats.js?v=20261107001913';
-import { tagParent } from '../sneo/common.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_play, snd_init, mus_loop_ext, mus_stop, snd_stop } from '../runtime/audio.js?v=20261107040321';
+import { audioReady, assets } from '../runtime/assets.js?v=20261107040321';
+import { gotoRoom } from '../screens/common.js?v=20261107040321';
+import { getBest, saveBest } from '../settings.js?v=20261107040321';
+import { drawSoulHat } from '../hats.js?v=20261107040321';
+import { tagParent } from '../sneo/common.js?v=20261107040321';
 
 // Spamton NEO's turns in fight order: [rr, difficulty, name, object the attack needs].
 // Only the attacks whose objects are ported are listed (ATTACKS).
@@ -607,6 +607,7 @@ export function startPractice({ start = 0, hp = 90 } = {}) {
 
 // Spamton NEO, the party stand-ins and the background, driven by the given controller object.
 function setupArena(controllerName, attackIndex) {
+  G.weird = false; // practice is the normal-route fight's attacks
   setupGlobals();
   installFallbacks();
   // Neither mode ever ends in a game over: it just refills the party. The real script is

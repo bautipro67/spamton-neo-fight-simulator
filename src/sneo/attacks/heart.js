@@ -8,15 +8,15 @@
 import {
   global, Instance, defineObject, instance_create, instance_destroy, instancesOf, instance_number, objectExists,
   choose, random, random_range, lerp, lengthdir_x, lengthdir_y, point_direction, draw_sprite_ext, draw_self,
-  draw_set_color, draw_line_width, snd_play, snd_volume, snd_is_playing, bgr,
-} from '../rt.js?v=20261107001913';
+  draw_set_color, draw_line_width, snd_play, snd_volume, snd_is_playing, bgr, S,
+} from '../rt.js?v=20261107040321';
 import {
   first, camerax, cameray, callOr, scr_bullet_init, scr_lerpvar, scr_marker, scr_script_delayed, scr_doom,
   lerp_ease_in, lerp_ease_out,
-} from '../common.js?v=20261107001913';
-import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261107001913';
-import { POSES } from '../enemy.js?v=20261107001913';
-import { SneoBulletController } from './heads.js?v=20261107001913';
+} from '../common.js?v=20261107040321';
+import { BasicBulletSneo, scr_afterimage_cut } from '../shots.js?v=20261107040321';
+import { POSES } from '../enemy.js?v=20261107040321';
+import { SneoBulletController } from './heads.js?v=20261107040321';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const ctrl = () => first('obj_sneo_bulletcontroller');
@@ -76,6 +76,11 @@ function wire(s, type) {
   w.type = type;
   w.target = 3;
   w.damage = Math.floor(global.monsterat[s.myself] * 5 * 0.6);
+  // The Weird Route: the controller's target, and harder hits.
+  if (S.scr_sideb_get_phase() > 2) {
+    w.target = ctrl()?.target ?? 3;
+    w.damage = Math.floor(global.monsterat[s.myself] * 5 * 0.8);
+  }
   return w;
 }
 function makeHearts(s, hearttype) {

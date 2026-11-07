@@ -5,17 +5,17 @@ import {
   instance_number, withObj, random, button1_p, button2_h, string_length, string_char_at,
   string_insert, string_delete, draw_set_font, draw_set_color, draw_get_color, draw_set_alpha, draw_text,
   draw_text_transformed, draw_text_color, draw_rectangle, draw_sprite_ext, draw_self, button3_h, instancesOf,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_play } from '../runtime/audio.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_play } from '../runtime/audio.js?v=20261107040321';
 
 const sin = Math.sin;
-import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261107001913';
+import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261107040321';
 
 // Text sounds that exist in this build; the others are silent.
 const TEXTSND = {
   snd_text: 'snd_text', snd_txtsus: 'snd_txtsus', snd_txtral: 'snd_txtral', snd_txtjok: 'snd_txtjok',
 };
-import { G } from '../runtime/gm.js?v=20261107001913';
+import { G } from '../runtime/gm.js?v=20261107040321';
 const tsnd = n => TEXTSND[n] ?? null;
 
 // scr_textsetup(font, color, x, y, charline, shake, rate, sound, hspace, vspace, special)
@@ -412,6 +412,7 @@ export class Writer extends Instance {
             }
           }
         }
+        if (nextchar == 'f') this.smallfaceCmd(nextchar2);
         accept = 0;
         n += 2;
       }
@@ -429,6 +430,27 @@ export class Writer extends Instance {
     this.siner += 1;
   }
 
+  // \fN: obj_writer Draw creates small face N (scr_smallface's settings) once, next to the text.
+  smallfaceCmd(c) {
+    const fam = Number(c);
+    const g = global;
+    g.sminstance ??= [];
+    if (!Number.isInteger(fam) || instance_exists(g.sminstance[fam]) || g.smxx?.[fam] === undefined) return;
+    const sf = instance_create(g.smxx[fam], g.smyy[fam], 'obj_smallface');
+    g.sminstance[fam] = sf;
+    sf.x += this.x;
+    sf.y += this.y;
+    sf.speed = g.smspeed[fam];
+    sf.direction = g.smdir[fam];
+    sf.type = g.smtype[fam];
+    sf.sprite_index = g.smsprite[fam];
+    sf.image_speed = g.smimagespeed[fam];
+    sf.image_index = g.smimage[fam];
+    sf.alarm[0] = g.smalarm[fam];
+    sf.mystring = g.smstring[fam];
+    sf.mycolor = g.smcolor[fam];
+    sf.writergod = this;
+  }
   drawChar(mychar, wx, wy, n) {
     if (this.colorchange == 1) draw_set_color(this.xcolor);
     const sh = () => random(this.shake);
@@ -542,11 +564,97 @@ class Face extends FaceParent {
   }
 }
 defineObject('obj_face', Face);
+// obj_smallface: a little face (or none) with a line of text beside the battle text; it slides in,
+// stays while its writer lives, and is gone with it (Draw_0, dark world).
 class SmallFace extends Instance {
-  create() { this.depth = -5; this.getrid = 0; }
-  draw() {}
+  create() {
+    Object.assign(this, {
+      stringpos: 0, mystring: ' ', part: 1, partstring: ' ', type: 0, rate: 1, active: 0, finished: 0,
+      mycolor: 0x800080, getrid: 0, writergod: null, nowdir: 90, facealpha: 0,
+    });
+    this.depth = -5;
+    this.alarm[0] = 1;
+  }
+  alarm0() {
+    this.nowdir = this.direction;
+    this.speed = 0;
+    this.active = 1;
+    if (this.type != 2 && this.type != 4) this.finished = 1;
+  }
+  draw() {
+    if (this.facealpha < 1) this.facealpha += 0.2;
+    if (this.sprite_index) draw_sprite_ext(this.sprite_index, this.image_index, this.x, this.y, this.image_xscale, this.image_yscale, this.image_angle, this.image_blend, this.facealpha);
+    draw_set_alpha(this.facealpha);
+    draw_set_font('fnt_main');
+    draw_set_color(this.mycolor);
+    if (this.type == 0 || this.type == 3) draw_text(this.x + 70, this.y + 10, this.mystring);
+    if (this.type == 1 && this.active == 1 && this.getrid == 0) {
+      draw_text(this.x + 70, this.y + 15, this.mystring);
+      this.finished = 1;
+    }
+    if ((this.type == 2 || this.type == 4) && this.active == 1) {
+      if (this.finished == 0) {
+        this.partstring += string_char_at(this.mystring, this.part);
+        this.part += 1;
+        if (this.part >= string_length(this.mystring) + 1) this.finished = 1;
+      }
+      draw_text(this.x + 70 + random(1), this.y + 15 + random(1), this.partstring);
+    }
+    draw_set_alpha(1);
+    if (this.writergod && this.writergod.alive) {
+      if (this.finished == 1 && this.getrid == 0) this.finished = 2;
+    } else {
+      instance_destroy(this);
+      return;
+    }
+    if (this.getrid == 1) {
+      this.direction = -this.nowdir;
+      this.speed += 2;
+      if (this.type == 3 || this.type == 4) instance_destroy(this);
+    }
+  }
 }
 defineObject('obj_smallface', SmallFace);
+
+// scr_smallface_reset(n) / scr_smallface(n, face, image, x, y, string): set up small face n for the
+// next "\fn" in a message (battle positions; the faces this simulator needs are "none").
+const SM_KEYS = ['smalarm', 'smyy', 'smxx', 'smdir', 'smspeed', 'smtype', 'smimage', 'smimagespeed', 'smsprite', 'smcolor', 'smstring'];
+defineScript('scr_smallface_reset', (n) => {
+  const g = global;
+  for (const k of SM_KEYS) g[k] ??= [];
+  g.smalarm[n] = 5;
+  g.smyy[n] = 70;
+  g.smxx[n] = 170;
+  g.smdir[n] = 180;
+  g.smspeed[n] = 10;
+  g.smtype[n] = 3;
+  g.smimage[n] = g.fe ?? 0;
+  g.smimagespeed[n] = 0;
+  g.smsprite[n] = 'spr_face_s6';
+  g.smcolor[n] = 0xffffff;
+  g.smstring[n] = '* ... what?';
+});
+const SM_FACES = { susie: 'spr_face_susie_alt', ralsei: 'spr_face_r_nohat', none: 'spr_empty', empty: 'spr_empty' };
+const SM_X = { left: 60, leftmid: 160, mid: 260, middle: 260, rightmid: 360, right: 460 };
+const SM_Y = { top: -10, mid: 30, middle: 30, bottommid: 45, bottom: 56 };
+defineScript('scr_smallface', (n, face, image, x, y, str) => {
+  const g = global;
+  S.scr_smallface_reset(n);
+  g.smsprite[n] = typeof face === 'string' ? (SM_FACES[face] ?? 'spr_face_susie_alt') : (face || 'spr_empty');
+  g.smimage[n] = image;
+  g.smxx[n] = typeof x === 'string' ? (SM_X[x] ?? g.smxx[n]) : x;
+  if (typeof y === 'string') {
+    if (y in SM_Y) g.smyy[n] = SM_Y[y];
+    if (y == 'bottom' || y == 'bottommid') {
+      g.smdir[n] = 90;
+      g.smspeed[n] = 4;
+      g.smalarm[n] = 10;
+      g.smyy[n] += 40;
+      g.smxx[n] -= 40;
+    }
+  } else g.smyy[n] = y;
+  g.smstring[n] = str;
+});
 
 // ---------------------------------------------------------------- battle text
 

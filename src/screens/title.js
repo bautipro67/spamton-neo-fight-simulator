@@ -6,17 +6,17 @@ import {
   draw_sprite_ext, draw_set_color, draw_set_font, draw_set_alpha, draw_rectangle, draw_text, controls,
   draw_set_halign, draw_text_transformed, fa_center, fa_left,
   sprite_get_xoffset, sprite_get_yoffset, draw_line_width,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107001913';
-import { startBattle } from '../battle/setup.js?v=20261107001913';
-import * as SB from '../debug/sandbox.js?v=20261107001913';
-import { gotoRoom, fadeOut, centerText } from './common.js?v=20261107001913';
-import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261107001913';
-import { HATS, currentHat, drawHat } from '../hats.js?v=20261107001913';
-import { openEquipment } from './equipment.js?v=20261107001913';
-import { openControls, keyName } from './controls.js?v=20261107001913';
-import './gameover.js?v=20261107001913';
-import './ending.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107040321';
+import { startBattle } from '../battle/setup.js?v=20261107040321';
+import * as SB from '../debug/sandbox.js?v=20261107040321';
+import { gotoRoom, fadeOut, centerText } from './common.js?v=20261107040321';
+import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261107040321';
+import { HATS, currentHat, drawHat } from '../hats.js?v=20261107040321';
+import { openEquipment } from './equipment.js?v=20261107040321';
+import { openControls, keyName } from './controls.js?v=20261107040321';
+import './gameover.js?v=20261107040321';
+import './ending.js?v=20261107040321';
 
 // Dark panel over the title art, behind the OPTIONS and CONTROLS lists.
 class Panel extends Instance {
@@ -105,9 +105,9 @@ export function startTitle() {
     SB.startPractice({ start: (Number(p.get('attack')) || 1) - 1, hp: Number(p.get('hp')) || 90 });
     return;
   }
-  if (p.has('battle') || p.has('nointro')) {
+  if (p.has('battle') || p.has('nointro') || p.has('weird')) {
     if (p.has('nointro')) G.settings.intro = false;
-    startBattle({ intro: G.settings.intro });
+    startBattle({ intro: G.settings.intro, weird: p.has('weird') });
     return;
   }
   gotoRoom();
@@ -132,13 +132,23 @@ function leave(music, then) {
 function mainMenu(music, cur = 0) {
   const menu = instance_create(MENU_X, MENU_Y, 'obj_sim_heartmenu');
   menu.setup(['BEGIN', 'PRACTICE', 'EQUIPMENT', 'OPTIONS'], (i, m) => {
-    if (i == 0) return leave(music, () => startBattle({ intro: G.settings.intro }));
     instance_destroy(m);
+    if (i == 0) routeMenu(music);
     if (i == 1) practiceMenu(music);
     if (i == 2) equipmentMenu(music);
     if (i == 3) optionsMenu(music);
   }, 'fnt_mainbig', 28);
   menu.cur = cur;
+}
+
+// BEGIN: the normal fight (Kris, Susie and Ralsei on the coaster) or the Weird Route one (Kris alone
+// at the Dark Fountain).
+function routeMenu(music) {
+  const menu = instance_create(MENU_X, MENU_Y, 'obj_sim_heartmenu');
+  menu.setup(['NORMAL ROUTE', 'WEIRD ROUTE', 'BACK'], (i, m) => {
+    if (i == 2) { instance_destroy(m); mainMenu(music, 0); return; }
+    return leave(music, () => startBattle({ intro: G.settings.intro, weird: i == 1 }));
+  }, 'fnt_mainbig', 28);
 }
 
 // Practice: dodge the fight's attacks in order; see startPractice in src/debug/sandbox.js.

@@ -3,10 +3,10 @@
 import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_exists, draw_sprite_ext,
   draw_set_color, draw_set_font, draw_set_alpha, draw_rectangle,
-} from '../runtime/gm.js?v=20261107001913';
-import { snd_init, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107001913';
-import { startBattle } from '../battle/setup.js?v=20261107001913';
-import { gotoRoom, scr_darkbox, fadeOut, centerText } from './common.js?v=20261107001913';
+} from '../runtime/gm.js?v=20261107040321';
+import { snd_init, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107040321';
+import { startBattle } from '../battle/setup.js?v=20261107040321';
+import { gotoRoom, scr_darkbox, fadeOut, centerText } from './common.js?v=20261107040321';
 
 const BS = String.fromCharCode(92);
 const LINES = {
@@ -16,6 +16,13 @@ const LINES = {
     title: 'YOU WERE A BIG SHOT!',
     color: 0xffff00,
     knight: 'spr_sneo_example',
+  },
+  // The Weird Route fight: the cold came down on him in the dark.
+  weird: {
+    msg: ['* Spamton NEO was defeated./%'],
+    title: 'WEIRD ROUTE CLEARED',
+    color: 0x80ffff,
+    knight: null,
   },
   // GIVE UP on the game over screen.
   lose: {
@@ -75,7 +82,7 @@ class Ending extends Instance {
     const d = LINES[this.kind];
     const a = this.con >= 3 ? 1 : Math.min(1, this.t / 30);
     const bob = Math.cos(this.t / 8) * 8;
-    draw_sprite_ext(d.knight, 0, 230, 70 + bob, 2, 2, 0, 0xffffff, a);
+    if (d.knight) draw_sprite_ext(d.knight, 0, 230, 70 + bob, 2, 2, 0, 0xffffff, a);
     if (this.con >= 1 && this.con <= 2) {
       draw_set_color(0);
       draw_rectangle(38, 326, 602, 464, false);
@@ -97,5 +104,5 @@ defineScript('startEnding', (kind) => {
   gotoRoom();
   global.fighting = 0;
   const e = instance_create(0, 0, 'obj_sim_ending');
-  e.kind = kind === 'lose' ? 'lose' : 'win';
+  e.kind = LINES[kind] ? kind : 'win';
 });

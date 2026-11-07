@@ -11,3 +11,6 @@ spr: ^spr_ralseib_
 spr: ^spr_(ralsei_hurt|ralseir|ralsei_walk_right|ralsei_walk_right_unhappy|ralsei_defend_peek|susieb_defeat|susie_defend_peek|face_r_dark|face_r_nohat|face_susie_alt|susier_dark_unhappy|kris_sword_jump_down)$
 snd: ^snd_(txtspam2|txtspam|chargeshot_charge|chargeshot_fire|heartshot_dr|heartshot_dr_b|sneo_overpower|sneo_laugh_long|spamton_laugh|stardrop|explosion|noise|cardrive|bomb|damage|bell|boost|mercyadd|error|weaponpull_fast|escaped|petrify)$
 spr: ^bg_dw_mansion_basement_cityscape_(background|midground|foreground)$
+# Weird Route: the Dark Fountain behind the fight, and the end fireworks
+spr: ^(bg_fountain1|spr_fountainedge|spr_fountainbottom|spr_empty)$
+snd: ^snd_explosion_8bit$
