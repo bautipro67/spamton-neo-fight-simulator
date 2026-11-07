@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261107140756';
-import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107140756';
-import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107140756';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107140756';
-import { registerBackground } from './misc.js?v=20261107140756';
+} from '../runtime/gm.js?v=20261107201439';
+import { audio_stop_all, snd_init } from '../runtime/audio.js?v=20261107201439';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107201439';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107201439';
+import { registerBackground } from './misc.js?v=20261107201439';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -513,7 +513,7 @@ export function startBattle(opts = {}) {
   if (opts.weird !== undefined) G.weird = !!opts.weird;
   G.sneoAfterFight = false; // set while the scene after a won fight takes over (src/sneo/scenes.js)
   const tempflag = global.tempflag ? global.tempflag.slice() : null;
-  snd_free_all();
+  audio_stop_all();
   room_reset();
   G.viewScale = 1;
   G.camX = G.camY = 0;

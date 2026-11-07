@@ -5,17 +5,17 @@ import {
   instance_number, withObj, random, button1_p, button2_h, string_length, string_char_at,
   string_insert, string_delete, draw_set_font, draw_set_color, draw_get_color, draw_set_alpha, draw_text,
   draw_text_transformed, draw_text_color, draw_rectangle, draw_sprite_ext, draw_self, button3_h, instancesOf,
-} from '../runtime/gm.js?v=20261107140756';
-import { snd_play } from '../runtime/audio.js?v=20261107140756';
+} from '../runtime/gm.js?v=20261107201439';
+import { snd_play } from '../runtime/audio.js?v=20261107201439';
 
 const sin = Math.sin;
-import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261107140756';
+import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261107201439';
 
 // Text sounds that exist in this build; the others are silent.
 const TEXTSND = {
   snd_text: 'snd_text', snd_txtsus: 'snd_txtsus', snd_txtral: 'snd_txtral', snd_txtjok: 'snd_txtjok',
 };
-import { G } from '../runtime/gm.js?v=20261107140756';
+import { G } from '../runtime/gm.js?v=20261107201439';
 const tsnd = n => TEXTSND[n] ?? null;
 
 // scr_textsetup(font, color, x, y, charline, shake, rate, sound, hspace, vspace, special)
@@ -889,7 +889,7 @@ defineScript('scr_blconskip', (inst, n) => {
 
 class Darkener extends Instance {
   create() {
-    this.depth = 200;
+    this.depth = 205; // Chapters 2 and 3 (behind Kris, who stands at 200)
     if (instance_number('obj_darkener') > 1) instance_destroy(this);
     this.darken = 1;
     this.darkamt = 0;
