@@ -4,11 +4,11 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, room_reset, objectExists,
   font_add_sprite_ext,
-} from '../runtime/gm.js?v=20261107054818';
-import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107054818';
-import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107054818';
-import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107054818';
-import { registerBackground } from './misc.js?v=20261107054818';
+} from '../runtime/gm.js?v=20261107133820';
+import { snd_free_all, snd_init } from '../runtime/audio.js?v=20261107133820';
+import { WEAPONS, ARMORS, ARMOR_ELEMENTS, BASE_STATS, getLoadout } from './equipment.js?v=20261107133820';
+import { arr, arr2, view_x, view_y, splitCaller } from './common.js?v=20261107133820';
+import { registerBackground } from './misc.js?v=20261107133820';
 
 function scr_gamestart() {
   global.chapter = 2;
@@ -519,6 +519,9 @@ export function startBattle(opts = {}) {
   G.camX = G.camY = 0;
   registerBackground();
   S.init_battle_globals();
+  // obj_ch2_sceneex2 / obj_fountainkris_ch2_sideb: the result goes in global.flag[571] (1 = violence,
+  // 2 = spared), which picks the item after the fight.
+  global.flag[54] = 571;
   if (tempflag) {
     global.tempflag = tempflag;
     global.tempflag[37] = G.sneoGameovers || 0; // game overs this session (obj_spamton_neo_enemy Other_14)

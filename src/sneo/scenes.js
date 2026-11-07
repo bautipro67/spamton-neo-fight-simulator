@@ -10,16 +10,16 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instancesOf,
   draw_sprite_ext, draw_set_color, draw_set_alpha, draw_set_font, draw_text, draw_rectangle, lerp, random, random_range,
   controls,
-} from '../runtime/gm.js?v=20261107054818';
-import { keyName } from '../screens/controls.js?v=20261107054818';
-import { snd_play, snd_pitch, snd_stop, snd_init, mus_loop_ext, mus_volume, mus_stop, snd_free_all } from '../runtime/audio.js?v=20261107054818';
-import { POSES, SceneEx2 } from './enemy.js?v=20261107054818';
-import { tagParent, first, camerax, cameray, i_ex, snd_play_pitch, scr_afterimage, scr_dark_marker } from './common.js?v=20261107054818';
-import { startBattle } from '../battle/setup.js?v=20261107054818';
-import { gotoRoom } from '../screens/common.js?v=20261107054818';
+} from '../runtime/gm.js?v=20261107133820';
+import { keyName } from '../screens/controls.js?v=20261107133820';
+import { snd_play, snd_pitch, snd_stop, snd_init, mus_loop_ext, mus_volume, mus_stop, snd_free_all } from '../runtime/audio.js?v=20261107133820';
+import { POSES, SceneEx2 } from './enemy.js?v=20261107133820';
+import { tagParent, first, camerax, cameray, i_ex, snd_play_pitch, scr_afterimage, scr_dark_marker } from './common.js?v=20261107133820';
+import { startBattle } from '../battle/setup.js?v=20261107133820';
+import { gotoRoom } from '../screens/common.js?v=20261107133820';
 import {
   loadRoom, enterRoom, c, scr_cutscene_make, scr_maincharacters_actors, c_waitcustom_end, d_ex, lerpvar, moveToPoint,
-} from '../screens/cutscene.js?v=20261107054818';
+} from '../screens/cutscene.js?v=20261107133820';
 
 const BS = String.fromCharCode(92);
 const PARTS = ['spr_sneo_wingl', 'spr_sneo_arml', 'spr_sneo_legl', 'spr_sneo_legr', 'spr_sneo_body', 'spr_sneo_head', 'spr_sneo_armr', 'spr_sneo_wingr'];
@@ -1047,6 +1047,7 @@ class AfterScene extends Instance {
     const sp = this.sparkle = scr_dark_marker(-100, -100, 'spr_shine');
     sp.image_speed = 0.25;
     sp.image_alpha = 0;
+    this.flag571 = global.flag[571];
     snd_free_all();
     global.currentsong = [snd_init('spamton_neo_after.ogg'), null];
     global.currentsong[1] = mus_loop_ext(global.currentsong[0], 1, 1);
@@ -1094,10 +1095,9 @@ class AfterScene extends Instance {
       c.msgsetloc(0, '* (You got ShadowCrystal.)/%');
       c.talk_wait();
       c.wait(5);
-      // global.flag[571]: the fight's result (1 = won with violence).
       c.soundplay('snd_item');
       c.speaker('no_name');
-      c.msgsetloc(0, G.sneoEnding === 'mercy' ? '* (You got Dealmaker.)/%' : '* (You got PuppetScarf.)/%');
+      c.msgsetloc(0, this.flag571 === 1 ? '* (You got PuppetScarf.)/%' : '* (You got Dealmaker.)/%');
       c.talk_wait();
       c.mus2('volume', 0, 30);
       c.wait(30);
@@ -1127,8 +1127,10 @@ export async function startPostScene() {
     return S.startEnding('win');
   }
   const tempflag = global.tempflag;
+  const flag571 = global.flag?.[571]; // the fight's result: 1 = won with violence, 2 = spared
   gotoRoom();
   global.tempflag = tempflag;
+  global.flag[571] = flag571;
   global.facing = 0;
   enterRoom('room_dw_mansion_b_east_a', 640, 480);
   const kris = instance_create(300, 223, 'obj_mainchara');

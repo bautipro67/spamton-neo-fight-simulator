@@ -6,17 +6,17 @@ import {
   draw_sprite_ext, draw_set_color, draw_set_font, draw_set_alpha, draw_rectangle, draw_text, controls,
   draw_set_halign, draw_text_transformed, fa_center, fa_left,
   sprite_get_xoffset, sprite_get_yoffset, draw_line_width,
-} from '../runtime/gm.js?v=20261107054818';
-import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107054818';
-import { startBattle } from '../battle/setup.js?v=20261107054818';
-import * as SB from '../debug/sandbox.js?v=20261107054818';
-import { gotoRoom, fadeOut, centerText } from './common.js?v=20261107054818';
-import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261107054818';
-import { HATS, currentHat, drawHat } from '../hats.js?v=20261107054818';
-import { openEquipment } from './equipment.js?v=20261107054818';
-import { openControls, keyName } from './controls.js?v=20261107054818';
-import './gameover.js?v=20261107054818';
-import './ending.js?v=20261107054818';
+} from '../runtime/gm.js?v=20261107133820';
+import { snd_init, snd_play, mus_loop_ext, mus_volume, mus_stop } from '../runtime/audio.js?v=20261107133820';
+import { startBattle } from '../battle/setup.js?v=20261107133820';
+import * as SB from '../debug/sandbox.js?v=20261107133820';
+import { gotoRoom, fadeOut, centerText } from './common.js?v=20261107133820';
+import { saveSettings, applyVolume, getBest } from '../settings.js?v=20261107133820';
+import { HATS, currentHat, drawHat } from '../hats.js?v=20261107133820';
+import { openEquipment } from './equipment.js?v=20261107133820';
+import { openControls, keyName } from './controls.js?v=20261107133820';
+import './gameover.js?v=20261107133820';
+import './ending.js?v=20261107133820';
 
 // Dark panel over the title art, behind the OPTIONS and CONTROLS lists.
 class Panel extends Instance {
@@ -145,10 +145,12 @@ function mainMenu(music, cur = 0) {
 // at the Dark Fountain).
 function routeMenu(music) {
   const menu = instance_create(MENU_X, MENU_Y, 'obj_sim_heartmenu');
+  const back = m => { instance_destroy(m); mainMenu(music, 0); };
   menu.setup(['NORMAL ROUTE', 'WEIRD ROUTE', 'BACK'], (i, m) => {
-    if (i == 2) { instance_destroy(m); mainMenu(music, 0); return; }
+    if (i == 2) return back(m);
     return leave(music, () => S.startSneoFight({ weird: i == 1 }));
   }, 'fnt_mainbig', 28);
+  menu.onBack = back;
 }
 
 // Practice: dodge the fight's attacks in order; see startPractice in src/debug/sandbox.js.
