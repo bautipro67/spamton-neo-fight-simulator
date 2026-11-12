@@ -4,8 +4,8 @@ import {
   withObj, event_user, choose, random, round, merge_color, button1_p, button2_p, button3_p,
   draw_set_color, draw_set_alpha, draw_set_font, draw_set_halign, draw_get_color, draw_rectangle,
   draw_sprite, draw_sprite_ext, draw_text_transformed,
-} from '../runtime/gm.js?v=20261112133253';
-import { withInst, gmlString, knightEnemy } from './common.js?v=20261112133253';
+} from '../runtime/gm.js?v=20261112232536';
+import { withInst, gmlString, knightEnemy } from './common.js?v=20261112232536';
 
 const g = global;
 
@@ -349,8 +349,6 @@ defineScript('scr_damage_enemy', (inst, target, damage) => {
       m.shakex = 9;
       m.state = 3;
       m.hurttimer = 30;
-      // obj_heroparent Alarm_1, Chapter 2: Spamton NEO's shock pose.
-      if (m.constructor.objName === 'obj_spamton_neo_enemy') Object.assign(m, { partmode: 40, shockthreshold: 15, shocktimer: 9999, hurttimer2: 10 });
     });
     if (instance_exists(g.monsterinstance[target])) g.monsterinstance[target].hurtamt = damage;
   }

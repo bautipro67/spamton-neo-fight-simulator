@@ -6,15 +6,15 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261112133253';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261112133253';
-import { scr_bulletspawner } from './dbullet.js?v=20261112133253';
+} from './rt.js?v=20261112232536';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261112232536';
+import { scr_bulletspawner } from './dbullet.js?v=20261112232536';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
   draw_rectangle,
-} from '../runtime/gm.js?v=20261112133253';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261112133253';
+} from '../runtime/gm.js?v=20261112232536';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261112232536';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -1320,8 +1320,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     for (let i = 0; i < 8; i++) {
       const hook = POSES[this.partmode];
       if (hook ? hook(this, i) === true : this.builtinPose(i) === true) continue;
-      let shakevar = this.postPose(i);
-      if (this.state === 3) shakevar += this.shakex;
+      const shakevar = this.postPose(i);
       const spr = this.partsprite[i];
       const fr = Math.floor(this.partframe[i]);
       const lastxoff = this.facing === -1 ? 110 : 0;
@@ -1359,17 +1358,8 @@ export class SpamtonNeoEnemy extends MonsterParent {
     if (this.violentendflash > 0) this.violentendflash += 1;
     if (this.becomeflash === 0) this.flash = 0;
     this.becomeflash = 0;
-    // The hurt shake (state 3) after a FIGHT hit.
-    if (this.state === 3) {
-      this.hurttimer -= 1;
-      if (this.hurttimer < 0) { this.state = 0; this.shakex = 0; }
-      else if (++this.hurtshake > 1) {
-        if (this.shakex > 0) this.shakex -= 1;
-        if (this.shakex < 0) this.shakex += 1;
-        this.shakex = -this.shakex;
-        this.hurtshake = 0;
-      }
-    }
+    // (A hit leaves state at 3 with no shake of its own: the shocked pose and hurttimer2 are the
+    // whole reaction. Only obj_oflash sets state back to 0.)
   }
 }
 defineObject('obj_spamton_neo_enemy', SpamtonNeoEnemy);

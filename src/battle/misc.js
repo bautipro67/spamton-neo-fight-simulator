@@ -3,8 +3,8 @@
 import {
   global, G, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists,
   draw_sprite_ext, d3d_set_fog, objectExists, lerp, make_color_hsv, merge_color, instancesOf,
-} from '../runtime/gm.js?v=20261112133253';
-import { splitCaller, draw_sprite_tiled_ext, knightEnemy } from './common.js?v=20261112133253';
+} from '../runtime/gm.js?v=20261112232536';
+import { splitCaller, draw_sprite_tiled_ext, knightEnemy } from './common.js?v=20261112232536';
 
 // Generic effect objects the Knight modules may also register (their Chapter 3 versions win).
 const shared = (name, cls) => { if (!objectExists(name)) defineObject(name, cls); };
@@ -64,7 +64,7 @@ defineScript('scr_marker', (...a) => {
   return m;
 });
 
-// obj_oflash: a white silhouette pulse over its target.
+// obj_oflash: a white silhouette pulse over its target (Spamton NEO: his parts flash instead).
 class OFlash extends Instance {
   create() {
     this.flashspeed = 1;
@@ -77,6 +77,21 @@ class OFlash extends Instance {
     if (instance_exists(this.target)) {
       this.image_index = this.target.image_index;
       this.sprite_index = this.target.sprite_index;
+      // Chapter 2: Spamton NEO has no single sprite. His own parts flash instead (flash / fsiner in
+      // his Draw), and he takes the shocked pose for the hit; when the flash ends his state is 0 again.
+      if (this.target.object_index === 'obj_spamton_neo_enemy') {
+        const sneo = this.target;
+        this.siner += this.flashspeed;
+        if (this.siner > 4 && Math.sin(this.siner / 3) < 0) {
+          instance_destroy(this);
+          sneo.state = 0;
+          return;
+        }
+        if (this.siner === this.flashspeed) Object.assign(sneo, { partmode: 40, shockthreshold: 15, shocktimer: 9999, hurttimer2: 10 });
+        sneo.flash = 1;
+        sneo.fsiner = sneo.partsiner[7] / 8;
+        return;
+      }
     }
     this.siner += this.flashspeed;
     d3d_set_fog(true, this.flashcolor, 0, 1);

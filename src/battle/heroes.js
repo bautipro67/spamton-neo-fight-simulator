@@ -2,9 +2,9 @@
 import {
   global, Instance, defineObject, S, instance_create, instance_exists, instancesOf, withObj, random, round, ceil,
   merge_color, draw_sprite_ext, d3d_set_fog, sprite_get_number,
-} from '../runtime/gm.js?v=20261112133253';
-import { snd_play, snd_stop, snd_pitch } from '../runtime/audio.js?v=20261112133253';
-import { withInst, knightEnemy } from './common.js?v=20261112133253';
+} from '../runtime/gm.js?v=20261112232536';
+import { snd_play, snd_stop, snd_pitch } from '../runtime/audio.js?v=20261112232536';
+import { withInst, knightEnemy } from './common.js?v=20261112232536';
 
 const g = global;
 
@@ -265,6 +265,8 @@ export class HeroParent extends Instance {
     dm.type = this.char - 1;
     dm.delay = 8;
     if (damage > 0) {
+      // Chapter 2: a FIGHT hit puts Spamton NEO in his shocked pose (a new random one per hit).
+      if (sneo) Object.assign(sneo, { partmode: 40, shockthreshold: 15, shocktimer: 9999, hurttimer2: 10 });
       S.scr_tensionheal(round(this.points / 10));
       if (knightblock == 1) knight.blockanim = 1;
       if (knightblock == 0) {
