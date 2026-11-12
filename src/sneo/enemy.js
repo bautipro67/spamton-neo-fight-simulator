@@ -6,15 +6,15 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261112232536';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261112232536';
-import { scr_bulletspawner } from './dbullet.js?v=20261112232536';
+} from './rt.js?v=20261112235524';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261112235524';
+import { scr_bulletspawner } from './dbullet.js?v=20261112235524';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
   draw_rectangle,
-} from '../runtime/gm.js?v=20261112232536';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261112232536';
+} from '../runtime/gm.js?v=20261112235524';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261112235524';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -276,7 +276,9 @@ export class SpamtonNeoEnemy extends MonsterParent {
     this.partvisible_back = new Array(18).fill(1);
     Object.assign(this, {
       extra_vines: 26, lastwiretimer: 0, funnycheattimer: 0, funnycheattimer2: 0, funnycheattimer3: 0, headexpand: 0,
-      headforceframe: -1, laughtimer: 0, fakegrav: 0, falltimer: 0, fallshake: 10, vineid: 0, shadow_amount: 0, shake_head: 0,
+      headforceframe: -1, laughtimer: 0, fakegrav: 0, falltimer: 0, fallshake: 10,
+      // (Create_0's Weird Route fields; src/sneo/weird.js uses them)
+      weirdpathendcon: 0, weirdpathendtimer: 0, savemeactcon: 0, balloonorder: 0, cantspareinit: 0, specialcon: 0, specialcontimer: 0, vineid: 0, shadow_amount: 0, shake_head: 0,
     });
     this.armlength = point_distance(this.partxoff[1], this.partyoff[1], 36, 146);
     for (const b of instancesOf('obj_battleback')) instance_destroy(b);
@@ -1066,13 +1068,20 @@ export class SpamtonNeoEnemy extends MonsterParent {
     } else if (this.partblend[5] === this.blend) this.partblend[5] = 0xffffff;
     let shakevar = 0;
     if (i === 0) {
-      if (this.hurttimer2 > 0) {
-        this.hurttimer2 -= 1;
-        if (this.hurttimer2 === 1 && this.endcon === 0) { this.shockthreshold = 10; this.partmode = 1; }
-      }
-      if (this.didwejustdie === 0 && i_ex('obj_battlecontroller') && global.monsterhp[m] <= 0) {
-        this.partmode = 99;
-        this.dontchangepose = 1;
+      if (this.hurttimer2 > 0) this.hurttimer2 -= 1;
+      // The end of a hit's shocked pose: back to idle, or, once his HP is gone (on the Weird Route:
+      // at 10% or less), he stays frozen in the pose that hit left him in.
+      if (this.hurttimer2 === 1) {
+        if (this.endcon === 0) { this.shockthreshold = 10; this.partmode = 1; }
+        if (this.didwejustdie === 0 && i_ex('obj_battlecontroller')) {
+          const tg = global.chartarget?.[m] ?? m; // (the game reads monsterhp[chartarget[myself]])
+          const gone = global.monsterhp[tg] <= 0;
+          const weirdLow = global.monsterhp[m] <= global.monstermaxhp[m] * 0.1 && S.scr_sideb_get_phase() > 2 && this.weirdpathendcon === 0;
+          if (gone || weirdLow) {
+            this.partmode = 99;
+            this.dontchangepose = 1;
+          }
+        }
       }
     }
     if (this.hurttimer2 > 0) shakevar = random(this.hurttimer2) / 2 - this.hurttimer2 / 4;

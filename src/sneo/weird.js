@@ -11,12 +11,12 @@ import {
   random, irandom, irandom_range, lerp, merge_color, make_color_hsv, round, bgr, button3_p,
   draw_sprite_ext, draw_sprite_tiled_ext, draw_set_color, draw_rectangle, snd_play, snd_stop, snd_pitch,
   snd_init, mus_loop, mus_pitch, mus_volume, mus_stop,
-} from './rt.js?v=20261112232536';
-import { first, camerax, cameray, i_ex, scr_ease_inout, snd_play_pitch, scr_bullet_init } from './common.js?v=20261112232536';
-import { SpamtonNeoEnemy, POSES, STEP_HOOKS, isphase, msgset, msgnext, writerExists, killWriters } from './enemy.js?v=20261112232536';
-import { DBulletController } from './dbullet.js?v=20261112232536';
-import { CollideBullet } from './bullets.js?v=20261112232536';
-import { scr_afterimage_cut } from './shots.js?v=20261112232536';
+} from './rt.js?v=20261112235524';
+import { first, camerax, cameray, i_ex, scr_ease_inout, snd_play_pitch, scr_bullet_init } from './common.js?v=20261112235524';
+import { SpamtonNeoEnemy, POSES, STEP_HOOKS, isphase, msgset, msgnext, writerExists, killWriters } from './enemy.js?v=20261112235524';
+import { DBulletController } from './dbullet.js?v=20261112235524';
+import { CollideBullet } from './bullets.js?v=20261112235524';
+import { scr_afterimage_cut } from './shots.js?v=20261112235524';
 
 const P = SpamtonNeoEnemy.prototype;
 const kris = () => first('obj_herokris');
@@ -25,10 +25,8 @@ const kris = () => first('obj_herokris');
 function weirdInit(s) {
   if (s._weirdInit) return;
   s._weirdInit = 1;
-  Object.assign(s, {
-    weirdpathendcon: 0, weirdpathendtimer: 0, savemeactcon: 0, balloonorder: 0, cantspareinit: 0,
-    specialcon: 0, specialcontimer: 0,
-  });
+  // (obj_spamton_neo_enemy's create sets these; this only covers an instance made without it)
+  for (const k of ['weirdpathendcon', 'weirdpathendtimer', 'savemeactcon', 'balloonorder', 'cantspareinit', 'specialcon', 'specialcontimer']) s[k] ??= 0;
 }
 
 // ---------------------------------------------------------------- Step_0
