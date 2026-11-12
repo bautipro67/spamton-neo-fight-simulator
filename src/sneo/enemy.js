@@ -6,15 +6,15 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261107203112';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261107203112';
-import { scr_bulletspawner } from './dbullet.js?v=20261107203112';
+} from './rt.js?v=20261112133253';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261112133253';
+import { scr_bulletspawner } from './dbullet.js?v=20261112133253';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
   draw_rectangle,
-} from '../runtime/gm.js?v=20261107203112';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261107203112';
+} from '../runtime/gm.js?v=20261112133253';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261112133253';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -276,7 +276,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
     this.partvisible_back = new Array(18).fill(1);
     Object.assign(this, {
       extra_vines: 26, lastwiretimer: 0, funnycheattimer: 0, funnycheattimer2: 0, funnycheattimer3: 0, headexpand: 0,
-      headforceframe: -1, fakegrav: 0, falltimer: 0, fallshake: 0, vineid: 0, shadow_amount: 0, shake_head: 0,
+      headforceframe: -1, laughtimer: 0, fakegrav: 0, falltimer: 0, fallshake: 10, vineid: 0, shadow_amount: 0, shake_head: 0,
     });
     this.armlength = point_distance(this.partxoff[1], this.partyoff[1], 36, 146);
     for (const b of instancesOf('obj_battleback')) instance_destroy(b);
@@ -1341,8 +1341,10 @@ export class SpamtonNeoEnemy extends MonsterParent {
     }
     if (this.partmode === 13) {
       this.partframe[1] = 1;
-      const ax = this.x + px[1] + pxo[1] + lengthdir_x(this.armlength, this.partrot[1] - 93) + 15;
-      const ay = this.y + py[1] + pyo[1] + lengthdir_y(this.armlength, this.partrot[1] - 93);
+      // The arm's end follows the way he faces (the scene has him flipped, facing -1).
+      const fc = this.facing;
+      const ax = this.armendx = this.x + px[1] * fc + pxo[1] * fc + lengthdir_x(this.armlength, this.partrot[1] - 93) * fc + 15;
+      const ay = this.armendy = this.y + py[1] + pyo[1] + lengthdir_y(this.armlength, this.partrot[1] - 93);
       this.partframe[5] = (ps[5] / 6) % 3;
       draw_set_color(0xffffff);
       draw_circle(ax + 120, ay + 6, 13 + Math.sin(this.partrot[0] / 2) * 12, false);
