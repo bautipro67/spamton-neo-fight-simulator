@@ -1,8 +1,8 @@
 // obj_dbulletcontroller (generic frame only: no Chapter 2 normal-route turn uses it for Spamton
 // NEO; his weird-route PipisExplosion is type 51) and scr_bulletspawner.
-import { global, defineObject, defineScript, instance_create } from './rt.js?v=20261112235524';
-import { first, callOr } from './common.js?v=20261112235524';
-import { BulletGenParent } from './bullets.js?v=20261112235524';
+import { global, defineObject, defineScript, instance_create } from './rt.js?v=20261113111325';
+import { first, callOr } from './common.js?v=20261113111325';
+import { BulletGenParent } from './bullets.js?v=20261113111325';
 
 const monsterpop = callOr('scr_monsterpop', () => (global.monster ? global.monster[0] + global.monster[1] + global.monster[2] : 1));
 

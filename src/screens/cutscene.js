@@ -6,13 +6,13 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists, instancesOf,
   draw_sprite_ext, draw_set_color, draw_rectangle, lerp, point_distance, point_direction, lengthdir_x, lengthdir_y,
   random_range, clamp, left_h, right_h, up_h, down_h, button2_h,
-} from '../runtime/gm.js?v=20261112235524';
-import { assets } from '../runtime/assets.js?v=20261112235524';
+} from '../runtime/gm.js?v=20261113111325';
+import { assets } from '../runtime/assets.js?v=20261113111325';
 import {
   snd_play, snd_pitch, snd_volume, snd_init, mus_loop_ext, mus_volume, mus_stop, mus_pause, mus_resume,
-} from '../runtime/audio.js?v=20261112235524';
-import { scr_darkbox } from './common.js?v=20261112235524';
-import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261112235524';
+} from '../runtime/audio.js?v=20261113111325';
+import { scr_darkbox } from './common.js?v=20261113111325';
+import { lerp_ease_in, lerp_ease_out, lerp_ease_inout, scr_shakeobj } from '../sneo/common.js?v=20261113111325';
 
 const VERSION = new URL(import.meta.url).search;
 const ROOMS_URL = new URL('../../assets/rooms/', import.meta.url).href;
@@ -466,6 +466,8 @@ class CutsceneMaster extends Instance {
         if (!target) break;
         if (a5 === 0) target[a2] = a3;
         else if (a6 === 0) lerpvar(target, a2, a3, a4, a5);
+        // a numeric easetype eases "in"; a string like "2out" / "-1in" carries its own direction
+        else if (typeof a6 !== 'string') lerpvar(target, a2, a3, a4, a5, a6, 'in');
         else {
           const m = /^(-?)(\d+)(.*)$/.exec(String(a6));
           lerpvar(target, a2, a3, a4, a5, m ? Number(m[1] + m[2]) : 0, m ? m[3] : 'out');
@@ -604,8 +606,8 @@ export const c = {
   wait: t => cmd('wait', t),
   waitcustom: () => cmd('waitcustom'),
   var_instance: (inst, v, val) => cmd('var', inst, v, val, 0, 0, 0),
-  var_lerp_instance: (inst, v, a, b, t, ease, inout) => cmd('var', inst, v, a, b, t, ease === undefined ? 0 : String(ease) + (inout ?? '')),
-  var_lerp: (v, a, b, t, ease, inout) => cmd('var', 0, v, a, b, t, ease === undefined ? 0 : String(ease) + (inout ?? '')),
+  var_lerp_instance: (inst, v, a, b, t, ease, inout) => cmd('var', inst, v, a, b, t, ease === undefined ? 0 : inout === undefined ? ease : String(ease) + inout),
+  var_lerp: (v, a, b, t, ease, inout) => cmd('var', 0, v, a, b, t, ease === undefined ? 0 : inout === undefined ? ease : String(ease) + inout),
   soundplay: s => cmd('soundplay', s, 0, 0),
   soundplay_x: (s, vol, pitch) => cmd('soundplay', s, vol, pitch),
   mus: k => cmd('mus', k),
