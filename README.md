@@ -10,15 +10,17 @@ Play the Spamton NEO boss fight from **DELTARUNE Chapter 2** for free in your br
 - The yellow SOUL: shoot with Z, hold and release to fire a BIG SHOT. Shoot the bullets Spamton NEO throws at you.
 - The battle logic is ported from the original game's code, so it plays like the real fight.
 - Every attack of his normal-route fight, in order: Flying Heads, the RECREW columns, the heart on a wire, the phone call, the phone hands, the face attack and the NEO finale.
+- **The Weird Route fight** (BEGIN → WEIRD ROUTE, or [`?weird`](https://bautipro67.github.io/spamton-neo-fight-simulator/?weird)): Kris alone against Spamton NEO in front of the Dark Fountain, with no sparing, his lines, Kris's X-Slash and FriedPipis ACTs, and the route's own ending.
+- **The scenes around the fight**: Spamton NEO drops in on Kris, Susie and Ralsei arrive and the coaster ride begins; after the battle, his last words and the items (the ShadowCrystal, then the PuppetScarf or the Dealmaker, depending on how you won). The Weird Route has its own scenes at the Dark Fountain. Turn them off with SCENES in OPTIONS.
 - **Practice mode** (Bad Time Simulator style): dodge the attacks in order; lose your HP bar and the attack restarts, survive it and you move on. Pick the starting attack and 90 / 45 / 1 HP. Scores with ranks and a saved best for full runs. Direct link: [`?practice`](https://bautipro67.github.io/spamton-neo-fight-simulator/?practice).
 - **EQUIPMENT**: pick each character's weapon and armors (any Chapter 2 gear they can use) and the items you bring into the fight.
 - **Codes**: type a secret code in the Codes box under the game to unlock extras.
-- **OPTIONS**: volume, easy mode (half damage), **SOUL hats** and **CONTROLS** to remap every button on keyboard and gamepad. Options are remembered in the browser.
+- **OPTIONS**: volume, easy mode (half damage), scenes on/off, **SOUL hats** and **CONTROLS** to remap every button on keyboard and gamepad. Options are remembered in the browser.
 - **Pause** with Esc / P (Start on a gamepad): continue, restart, volume, quit to title.
 - **Sandbox mode** to repeat any attack freely: [`?sandbox&attack=0`](https://bautipro67.github.io/spamton-neo-fight-simulator/?sandbox&attack=0) (`[` / `]` switch attacks, `I` invincibility).
 - Touch controls on phones and tablets, fullscreen button.
 
-More fight simulators by the same fan: [Jevil Fight Simulator](https://bautipro67.github.io/jevil-fight-simulator/), [Roaring Knight Fight Simulator](https://bautipro67.github.io/roaring-knight-fight-simulator/), and [all DELTARUNE fight simulators](https://bautipro67.github.io/).
+Also by the same fan: [Jevil](https://bautipro67.github.io/jevil-fight-simulator/), [Roaring Knight](https://bautipro67.github.io/roaring-knight-fight-simulator/) and [Gerson](https://bautipro67.github.io/gerson-fight-simulator/) fight simulators. See [all the DELTARUNE fight simulators](https://bautipro67.github.io/).
 
 ## Controls
 
@@ -45,6 +47,7 @@ Then open `http://localhost:8000`.
 - `tools/datawin.py` reads GameMaker `data.win` files (sprites, fonts, sounds).
 - `tools/gmdis.py` decompiles the game's bytecode so the fight could be studied.
 - `tools/extract_assets.py --chapter 2` extracts only the assets this fight uses into `assets/`.
+- `tools/render_rooms.py` draws the mansion rooms (their tile and asset layers) into pictures for the scenes.
 - `tools/stamp_version.py` stamps a version on every file before publishing, so browsers never mix old and new files.
 - `src/runtime/` is a small GameMaker-like engine in JavaScript; `src/battle/` and `src/sneo/` are the ported fight.
 

@@ -15,16 +15,16 @@ import {
   lengthdir_x, lengthdir_y, draw_self, draw_sprite, draw_sprite_ext, draw_triangle, draw_circle,
   draw_set_colour, draw_get_color, draw_set_alpha, draw_get_alpha,
   snd_play, snd_loop, snd_stop, snd_volume, snd_pitch, bgr,
-} from '../rt.js?v=20261114002510';
+} from '../rt.js?v=20261114030556';
 import {
   first, camerax, cameray, i_ex, eq, ge, defineShared, scr_bullet_init, scr_movetowards, scr_inverselerp,
   scr_ease_in, lerp_ease_in, scr_remapvalue, move_towards_point, snd_play_x, draw_sprite_ext_centerscale,
   room_width, room_height,
-} from '../common.js?v=20261114002510';
-import { BulletParent, CollideBullet, RegularBullet } from '../bullets.js?v=20261114002510';
-import { BasicBulletSneo, YHeartShot } from '../shots.js?v=20261114002510';
-import { SneoBulletController } from './heads.js?v=20261114002510';
-import { SpamtonNeoEnemy, STEP_HOOKS } from '../enemy.js?v=20261114002510';
+} from '../common.js?v=20261114030556';
+import { BulletParent, CollideBullet, RegularBullet } from '../bullets.js?v=20261114030556';
+import { BasicBulletSneo, YHeartShot } from '../shots.js?v=20261114030556';
+import { SneoBulletController } from './heads.js?v=20261114030556';
+import { SpamtonNeoEnemy, STEP_HOOKS } from '../enemy.js?v=20261114030556';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const heart = () => first('obj_heart');
@@ -289,9 +289,12 @@ class BasicBulletSneoFinale extends BasicBulletSneo {
     this.direction += this.angle_speed;
     this.image_angle = this.direction;
   }
+  // Other_15 calls scr_damage_proportional, which is not ported: nothing in the game reaches it.
+  // The game never creates this object or obj_sneo_finale_bullet, and obj_sneo_final_forme (the
+  // other child) has its own Other_15 (the enemy's Other_12).
   user5() {
     if (this.active == 1) {
-      if (this.target !== 3) (S.scr_damage_proportional || S.scr_damage)(this); // scr_damage_proportional is not ported
+      if (this.target !== 3) (S.scr_damage_proportional || S.scr_damage)(this);
       if (this.target === 3) S.scr_damage_all(this);
       if (this.destroyonhit == 1) instance_destroy(this);
     }

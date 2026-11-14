@@ -8,13 +8,13 @@ import {
   instancesOf, event_user, choose, keyboard_check, keyboard_check_pressed, random_set_seed, round, S,
   draw_set_font, draw_set_halign, draw_set_color, draw_set_alpha, draw_rectangle, draw_text, draw_sprite_ext,
   fa_left, fa_center, merge_color, button1_p, vk, draw_self,
-} from '../runtime/gm.js?v=20261114002510';
-import { snd_play, snd_init, mus_loop_ext, mus_stop, snd_stop } from '../runtime/audio.js?v=20261114002510';
-import { audioReady, assets } from '../runtime/assets.js?v=20261114002510';
-import { gotoRoom } from '../screens/common.js?v=20261114002510';
-import { getBest, saveBest } from '../settings.js?v=20261114002510';
-import { drawSoulHat } from '../hats.js?v=20261114002510';
-import { tagParent } from '../sneo/common.js?v=20261114002510';
+} from '../runtime/gm.js?v=20261114030556';
+import { snd_play, snd_init, mus_loop_ext, mus_stop, snd_stop } from '../runtime/audio.js?v=20261114030556';
+import { audioReady, assets } from '../runtime/assets.js?v=20261114030556';
+import { gotoRoom } from '../screens/common.js?v=20261114030556';
+import { getBest, saveBest } from '../settings.js?v=20261114030556';
+import { drawSoulHat } from '../hats.js?v=20261114030556';
+import { tagParent } from '../sneo/common.js?v=20261114030556';
 
 // Spamton NEO's turns in fight order: [rr, difficulty, name, object the attack needs].
 // Only the attacks whose objects are ported are listed (ATTACKS).
