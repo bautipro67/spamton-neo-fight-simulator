@@ -5,9 +5,9 @@ import {
   G, global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists,
   withObj, button1_p, left_p, right_p, button2_h, draw_self, draw_sprite_ext, draw_set_color,
   draw_set_alpha, draw_set_font, draw_rectangle, draw_text, string_width, random, choose,
-} from '../runtime/gm.js?v=20261114041601';
-import { snd_play, snd_free_all, snd_init, mus_loop, mus_volume, mus_stop } from '../runtime/audio.js?v=20261114041601';
-import { gotoRoom } from './common.js?v=20261114041601';
+} from '../runtime/gm.js?v=20261114055614';
+import { snd_play, snd_free_all, snd_init, mus_loop, mus_volume, mus_stop } from '../runtime/audio.js?v=20261114055614';
+import { gotoRoom } from './common.js?v=20261114055614';
 
 // The battle as it looked when the party fell (sprite_create_from_surface).
 class Screenshot extends Instance {
@@ -73,7 +73,9 @@ class GameoverInit extends Instance {
 defineObject('obj_gameover_init', GameoverInit);
 
 defineScript('startGameover', (p) => {
-  gotoRoom({ heartx: p.x, hearty: p.y });
+  // The party stays known through the room changes (DEVICE_FAILURE has the one in it speak).
+  G.gameoverParty = (global.char ?? []).slice();
+  gotoRoom({ heartx: p.x, hearty: p.y, char: G.gameoverParty.slice() });
   global.tempflag = global.tempflag || new Array(100).fill(0);
   const go = instance_create(0, 0, 'obj_gameover_init');
   go.bg.img = p.shot;
@@ -261,7 +263,7 @@ class DeviceFailure extends Instance {
 defineObject('DEVICE_FAILURE', DeviceFailure);
 
 defineScript('startFailure', () => {
-  gotoRoom();
+  gotoRoom({ char: (G.gameoverParty ?? []).slice() });
   G.viewScale = 2;
   global.tempflag = global.tempflag || new Array(100).fill(0);
   instance_create(0, 0, 'DEVICE_FAILURE');
