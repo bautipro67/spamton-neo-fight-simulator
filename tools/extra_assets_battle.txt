@@ -8,3 +8,5 @@ spr:^spr_ralsei_(battleintro|idle|defend|hurt_fixed|attackready|attack|item|item
 spr:^spr_susier_wall$
 # The Weird Route's call for help: the ACT menu shows Ralsei's, Susie's and Noelle's heads (Draw_0, savemeactcon)
 spr:^spr_headnoelle$
+# Hidden F1 heal: obj_spamton_cherub (obj_spamton_neo_enemy Step_0)
+spr:^spr_spamton_cherub$

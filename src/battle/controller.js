@@ -6,10 +6,10 @@ import {
   instancesOf, withObj, round, floor, ceil, merge_color, point_direction, point_distance, choose,
   left_p, right_p, up_p, down_p, button1_p, button2_p, string_width, string_hash_to_newline,
   draw_set_color, draw_set_alpha, draw_set_font, draw_set_halign, draw_rectangle, draw_sprite,
-  draw_sprite_ext, draw_text, draw_text_colour, draw_text_transformed, draw_line_width,
-} from '../runtime/gm.js?v=20261119162330';
-import { snd_play, snd_volume, snd_pitch, mus_loop_ext } from '../runtime/audio.js?v=20261119162330';
-import { arr, arr2, view_x, view_y, withInst, exists, gmlString, subst, knightEnemy } from './common.js?v=20261119162330';
+  draw_sprite_ext, draw_text, draw_text_colour, draw_text_transformed, draw_line_width, keyboard_check, draw_get_font,
+} from '../runtime/gm.js?v=20261119225747';
+import { snd_play, snd_volume, snd_pitch, mus_loop_ext } from '../runtime/audio.js?v=20261119225747';
+import { arr, arr2, view_x, view_y, withInst, exists, gmlString, subst, knightEnemy } from './common.js?v=20261119225747';
 
 const sin = Math.sin, cos = Math.cos;
 const g = global;
@@ -714,7 +714,43 @@ class BattleController extends Instance {
         }
       }
     }
+    // Chapter 2 only: holding A in the ACT, MAGIC or target menus lists the S-, R- and N-Actions each
+    // enemy has next to it, in the heroes' soft colours, inside a magenta frame (Draw_0, flag 34 = 0
+    // once Susie and Ralsei can ACT).
+    if (keyboard_check(65) && !g.flag[34] && g.myfight == 0 && [11, 13, 2].includes(g.bmenuno)) this.drawActionList();
     draw_set_alpha(1);
+  }
+
+  drawActionList() {
+    const remfont = draw_get_font();
+    const has = c => g.char[0] == c || g.char[1] == c || g.char[2] == c;
+    const parts = [
+      [2, g.canactsus, g.actnamesus, 'S-Action', 'S-Action - ', 'S-Action'],
+      [3, g.canactral, g.actnameral, 'R-Action', 'R-Action - ', 'R-Action - Standard'],
+      [4, g.canactnoe, g.actnamenoe, 'N-Action', 'N-Action - ', 'N-Action - Standard'],
+    ];
+    for (let i = 0; i < 3; i++) {
+      if (!g.monster[i]) continue;
+      let ty = 0, tx = 0;
+      const m = g.monsterinstance[i];
+      const ox = m?.sactionboxx ?? 0, oy = m?.sactionboxy ?? 0;
+      draw_set_font('fnt_main');
+      for (const [c, can, names, plain, prefix, standard] of parts) {
+        if (!has(c)) continue;
+        for (let n = 0; n < 3; n++) {
+          draw_set_color(this.hpcolorsoft[c - 1]);
+          if (can?.[i]?.[n] != 1) continue;
+          const name = names[i][n];
+          const w = string_width(name);
+          if (w - 45 > tx) tx = w - 45;
+          draw_text(g.monsterx[i] - 200 + ox, g.monstery[i] + ty + oy, name != plain ? prefix + name : standard);
+          ty += 18;
+        }
+      }
+      draw_set_color(0xff00ff);
+      if (ty > 0) draw_rectangle(g.monsterx[i] - 210 + ox, g.monstery[i] + oy, g.monsterx[i] - 80 + tx + ox, g.monstery[i] + ty + oy, true);
+    }
+    draw_set_font(remfont);
   }
 
   drawEnemyList(xx, yy, c, t, flashInst) {

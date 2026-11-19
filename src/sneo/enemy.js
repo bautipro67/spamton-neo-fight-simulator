@@ -6,15 +6,15 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261119162330';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x } from './common.js?v=20261119162330';
-import { scr_bulletspawner } from './dbullet.js?v=20261119162330';
+} from './rt.js?v=20261119225747';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x, snd_play_pitch } from './common.js?v=20261119225747';
+import { scr_bulletspawner } from './dbullet.js?v=20261119225747';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
-  draw_rectangle,
-} from '../runtime/gm.js?v=20261119162330';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261119162330';
+  draw_rectangle, keyboard_check_pressed,
+} from '../runtime/gm.js?v=20261119225747';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261119225747';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -61,6 +61,94 @@ class VineCut extends Instance {
   }
 }
 defineObject('obj_sneo_vine_cut', VineCut);
+
+// obj_animation: plays its sprite once (Other_7 destroys it).
+if (!objectExists('obj_animation')) defineObject('obj_animation', class Animation extends Instance {
+  animationEnd() { instance_destroy(this); }
+});
+
+// scr_spamton_heal(state): every hero heals half their max HP (state 0; 1 is a fifth, 2 is 1 HP), with
+// the heal sparkle and a green number; damage numbers still waiting to show are cleared first.
+function scr_spamton_heal(state) {
+  for (const d of instancesOf('obj_dmgwriter')) if (d.delaytimer >= 1) d.killactive = 1;
+  for (let i = 0; i < 3; i++) {
+    if (global.char[i] == 0) continue;
+    const t = global.char[i];
+    let power = state == 0 ? global.maxhp[t] / 2 : state == 1 ? global.maxhp[t] / 5 : state == 2 ? 1 : 0;
+    power = Math.ceil(power);
+    S.scr_heal(i, power);
+    const h = global.charinstance[i];
+    if (!h || !h.alive) continue;
+    const ha = instance_create(h.x, h.y, 'obj_healanim');
+    ha.target = h;
+    const dmgwr = S.scr_dmgwriter_selfchar(h);
+    dmgwr.delay = 8;
+    dmgwr.type = 3;
+    dmgwr.damage = power;
+    if (global.hp[global.char[h.myself]] >= global.maxhp[global.char[h.myself]]) dmgwr.specialmessage = 3;
+    h.tu += 1;
+  }
+  for (let i = 0; i < 3; i++) {
+    const h = global.charinstance[i];
+    if (h && h.alive) h.tu -= 1;
+  }
+}
+
+// obj_spamton_cherub: F1 (or a click of the right stick), once per fight, in the menu or while Spamton
+// talks, sends a cherub down to each hero (obj_spamton_neo_enemy Step_0); the last one heals the party
+// (scr_spamton_heal) 48 frames later. It never draws itself: its green star trail and its picture are
+// obj_animation instances.
+class SpamtonCherub extends Instance {
+  constructor() {
+    super();
+    this.sprite_index = 'spr_spamton_cherub';
+  }
+  create() {
+    this.timer = 0;
+    this.x += 200;
+    this.y -= 150;
+    this.xspawn = this.x;
+    this.yspawn = this.y;
+    this.offset = random(6.283185307179586);
+    this.healer = false;
+    this.heal_state = 0;
+    this.image_xscale = 2;
+    this.image_yscale = 2;
+    this.image_speed = 0.5;
+    this.xoff = -Math.cos(8 + this.offset) * 20;
+    this.yoff = -Math.sin(8 + this.offset) * 20;
+    this.target = 0;
+  }
+  draw() {
+    if (this.timer == this.target) snd_play_pitch('snd_sparkle_glock', 1.1 + this.target * 0.2);
+    this.timer += 1;
+    if (this.timer >= 24) {
+      this.x = this.xstart;
+      this.y = this.ystart;
+      if (this.timer == 24) {
+        const d = instance_create(this.x, this.y, 'obj_animation');
+        d.sprite_index = this.sprite_index;
+        d.image_yscale = 2;
+        d.image_xscale = 2;
+      }
+      if (!this.healer) instance_destroy(this);
+      else if (this.timer == 48) scr_spamton_heal(this.heal_state);
+      else if (this.timer >= 63) instance_destroy(this);
+    } else if (this.timer >= 0 && this.timer <= 24) {
+      this.x = lerp(this.xspawn, this.xstart + this.xoff, clamp(this.timer / 25, 0, 1));
+      this.y = lerp(this.yspawn, this.ystart + this.yoff, clamp(this.timer / 25, 0, 1));
+      if (this.timer % 2 == 0) {
+        const d = instance_create(this.x + Math.cos(this.timer / 3 + this.offset) * 20, this.y + Math.sin(this.timer / 3 + this.offset) * 20, 'obj_animation');
+        d.sprite_index = 'spr_sparestar_anim';
+        d.image_speed = 0.5;
+        d.image_blend = 0x00ff00;
+        d.image_xscale = 2;
+        d.image_yscale = 2;
+      }
+    }
+  }
+}
+defineObject('obj_spamton_cherub', SpamtonCherub);
 
 // obj_sneo_vine_weak: the slash where a wire snaps.
 class VineWeak extends Instance {
@@ -239,7 +327,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
       hurt: 0, hurttimer: 0, hurtshake: 0, shakex: 0, acttimer: 0, con: 0, dodgetimer: 0, fatal: 0,
       candodge: 0, mytarget: 0, damage: -1, grazepoints: -1, timepoints: -1, inv: -1, target: -1, grazed: -1, grazetimer: -1,
       element: 'none', acting: 0, actcon: 0, actingsus: 0, actingral: 0, actingnoe: 0, actconsus: 0, actconral: 0, actconnoe: 0,
-      talkmax: 90, mercymod: 0, maxmercy: 100, recruitable: 1, recruitcount: 1, hurtspriteoffx: 0, hurtspriteoffy: 0,
+      talkmax: 90, party_heal: false, mercymod: 0, maxmercy: 100, recruitable: 1, recruitcount: 1, hurtspriteoffx: 0, hurtspriteoffy: 0,
     });
     this.depth = 90 - (this.y - cameray()) / 50;
     // Create_0
@@ -396,6 +484,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
       }
       if (i_ex('obj_returnheart') && this.statustextupdate === 0) this.statusText();
     }
+    if (global.monster[m] === 1) this.stepCherubHeal();
     if (global.monster[m] === 1 && global.myfight === 3) this.stepActs();
     if (this.endcon >= 1) this.stepEnd();
     for (const h of STEP_HOOKS) h(this);
@@ -579,6 +668,31 @@ export class SpamtonNeoEnemy extends MonsterParent {
     global.battlemsg[0] = ['* The stage lights are shattered.', '* It pulls the strings and makes them ring.',
       '* The air crackles with freedom.', '* Smells like rotten glass.'][choose(0, 1, 2, 3)];
     this.attacked = 1;
+  }
+  // F1 or the right stick's button (gamepad button 11, GameMaker's gp_stickr), once per fight, in the
+  // menu or while he talks: a cherub for each hero, and the party heals (obj_spamton_cherub).
+  stepCherubHeal() {
+    if (!(keyboard_check_pressed(112) || keyboard_check_pressed(1011)) || this.party_heal) return;
+    if (!(isphase('menu') || isphase('enemytalk'))) return;
+    if (isphase('enemytalk') && this.talktimer > 15) {
+      this.talktimer = this.talkmax;
+      killWriters();
+    }
+    for (let i = 0; i < 3; i++) {
+      if (global.char[i] == 0) continue;
+      const t = global.charinstance[i];
+      if (!t) continue;
+      const xx = i == 1 ? 34 : i == 2 ? 34 : 16, yy = i == 1 ? -32 : i == 2 ? -20 : -38;
+      const c = instance_create(t.x + xx, t.y + yy, 'obj_spamton_cherub');
+      if (i == 0 && global.char[1] == 0) c.healer = true;
+      else {
+        c.heal_state = this.party_heal ? 1 : 0;
+        c.timer = -5 * i;
+        c.target = i;
+        if (i == 2 || global.char[i + 1] == 0) c.healer = true;
+      }
+    }
+    this.party_heal = true;
   }
   // The SOUL went back: the menu text for the next turn.
   statusText() {
