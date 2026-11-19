@@ -15,16 +15,16 @@ import {
   lengthdir_x, lengthdir_y, draw_self, draw_sprite, draw_sprite_ext, draw_triangle, draw_circle,
   draw_set_colour, draw_get_color, draw_set_alpha, draw_get_alpha,
   snd_play, snd_loop, snd_stop, snd_volume, snd_pitch, bgr,
-} from '../rt.js?v=20261119142821';
+} from '../rt.js?v=20261119162330';
 import {
   first, camerax, cameray, i_ex, eq, ge, defineShared, scr_bullet_init, scr_movetowards, scr_inverselerp,
   scr_ease_in, lerp_ease_in, scr_remapvalue, move_towards_point, snd_play_x, draw_sprite_ext_centerscale,
   room_width, room_height,
-} from '../common.js?v=20261119142821';
-import { BulletParent, CollideBullet, RegularBullet } from '../bullets.js?v=20261119142821';
-import { BasicBulletSneo, YHeartShot } from '../shots.js?v=20261119142821';
-import { SneoBulletController } from './heads.js?v=20261119142821';
-import { SpamtonNeoEnemy, STEP_HOOKS } from '../enemy.js?v=20261119142821';
+} from '../common.js?v=20261119162330';
+import { BulletParent, CollideBullet, RegularBullet } from '../bullets.js?v=20261119162330';
+import { BasicBulletSneo, YHeartShot } from '../shots.js?v=20261119162330';
+import { SneoBulletController } from './heads.js?v=20261119162330';
+import { SpamtonNeoEnemy, STEP_HOOKS } from '../enemy.js?v=20261119162330';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const heart = () => first('obj_heart');
@@ -1184,7 +1184,7 @@ class FadeIn extends Instance {
     this.height = 10 + room_height / 4;
     this.x = -20;
     this.y = -20;
-    this.depth = -1000; // (on top, as the sim's obj_fadeout)
+    this.depth = -99999; // (the game's depth table: over everything)
   }
   draw() {
     this.image_alpha += this.fadespeed;

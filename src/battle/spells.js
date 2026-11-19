@@ -2,10 +2,10 @@
 import {
   global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists,
   instance_find, withObj, event_user, random, ceil, round, merge_color, point_direction, point_distance,
-  angle_difference, button1_p, draw_self, draw_sprite_ext, d3d_set_fog,
-} from '../runtime/gm.js?v=20261119142821';
-import { snd_play, snd_stop } from '../runtime/audio.js?v=20261119142821';
-import { withInst, subst, knightEnemy } from './common.js?v=20261119142821';
+  angle_difference, button1_p, draw_self, draw_sprite_ext, d3d_set_fog, instancesOf,
+} from '../runtime/gm.js?v=20261119162330';
+import { snd_play, snd_stop, snd_pitch, snd_volume } from '../runtime/audio.js?v=20261119162330';
+import { withInst, subst, knightEnemy } from './common.js?v=20261119162330';
 
 const g = global;
 
@@ -195,7 +195,7 @@ defineScript('scr_healallitemspell', (inst, amount) => {
 
 // Items that heal one target: id -> amount (Chapter 3).
 const HEAL1 = { 201: 40, 205: 20, 208: 70, 209: 50, 210: 4, 214: 500, 215: 50, 216: 80, 218: 10, 219: 10, 220: 10, 221: 10, 222: 60, 223: 120, 224: 100, 234: 100, 236: 20, 237: 80, 239: 140 };
-const HEALALL = { 206: 160, 207: 150, 211: 70, 225: 30, 238: 100 };
+const HEALALL = { 206: 160, 207: 140, 211: 70, 225: 30, 238: 100 };
 
 // scr_spell(spell, caster): hero scope.
 defineScript('scr_spell', (inst, spell, caster) => {
@@ -332,10 +332,22 @@ defineScript('scr_mercyadd', (m, amt) => {
   g.mercymod[m] += amt;
   if (g.mercymod[m] < 0) g.mercymod[m] = 0;
   if (g.mercymod[m] >= 100) g.mercymod[m] = 100;
+  // The chime, unless the amount is 0 or less or a MERCY number is already showing (Chapter 2).
+  let play = amt > 0;
+  for (const o of instancesOf('obj_dmgwriter')) if (o.type == 5) play = false;
+  if (play) {
+    let pitch = 0.8;
+    if (amt < 99) pitch = 1;
+    if (amt <= 50) pitch = 1.2;
+    if (amt <= 25) pitch = 1.4;
+    const v = snd_play('snd_mercyadd');
+    if (v) { snd_volume(v, 0.8, 0); snd_pitch(v, pitch); }
+  }
   const d = instance_create(g.monsterx[m], g.monstery[m] + 20 - g.hittarget[m] * 20, 'obj_dmgwriter');
   d.damage = amt;
   d.type = 5;
   g.hittarget[m] += 1;
+  return d;
 });
 
 // ---------------------------------------------------------------- Rude Buster
