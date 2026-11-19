@@ -116,10 +116,14 @@ def main():
     ap.add_argument("--game", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--chapter", type=int, default=2)
+    # (another copy of the chapter's data.win, such as an untouched backup when the install has mods on it;
+    # the sounds' audio groups, the music and the text still come from the install)
+    ap.add_argument("--datawin")
     a = ap.parse_args()
     load_extra_lists()
     chdir = os.path.join(a.game, "chapter%d_windows" % a.chapter)
-    dw = DataWin(os.path.join(chdir, "data.win"))
+    dw = DataWin(a.datawin or os.path.join(chdir, "data.win"))
+    dw.dir = chdir  # (audio groups and external sounds next to the install's data.win)
     for sub in ("fonts", "music", "text"):
         os.makedirs(os.path.join(a.out, sub), exist_ok=True)
 

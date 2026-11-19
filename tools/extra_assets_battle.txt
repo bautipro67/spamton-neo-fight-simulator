@@ -6,3 +6,5 @@ spr:^spr_(battleblcon|battleblcon_long|battleblcon_.*)$
 spr:^spr_ralsei_(battleintro|idle|defend|hurt_fixed|attackready|attack|item|itemready|spellready|spell|defeat|victory|actready|act|walk_right)$
 # Chapter 2 battle intro: Susie jumps in off the wall
 spr:^spr_susier_wall$
+# The Weird Route's call for help: the ACT menu shows Ralsei's, Susie's and Noelle's heads (Draw_0, savemeactcon)
+spr:^spr_headnoelle$

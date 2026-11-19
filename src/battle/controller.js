@@ -7,9 +7,9 @@ import {
   left_p, right_p, up_p, down_p, button1_p, button2_p, string_width, string_hash_to_newline,
   draw_set_color, draw_set_alpha, draw_set_font, draw_set_halign, draw_rectangle, draw_sprite,
   draw_sprite_ext, draw_text, draw_text_colour, draw_text_transformed, draw_line_width,
-} from '../runtime/gm.js?v=20261116033731';
-import { snd_play, snd_volume, snd_pitch, mus_loop_ext } from '../runtime/audio.js?v=20261116033731';
-import { arr, arr2, view_x, view_y, withInst, exists, gmlString, subst, knightEnemy } from './common.js?v=20261116033731';
+} from '../runtime/gm.js?v=20261119142821';
+import { snd_play, snd_volume, snd_pitch, mus_loop_ext } from '../runtime/audio.js?v=20261119142821';
+import { arr, arr2, view_x, view_y, withInst, exists, gmlString, subst, knightEnemy } from './common.js?v=20261119142821';
 
 const sin = Math.sin, cos = Math.cos;
 const g = global;
@@ -275,6 +275,12 @@ class BattleController extends Instance {
   }
 
   alarm2() {
+    // (Chapter 2: a turn that ends with Spamton NEO's MERCY full goes to his ending, not back to the menu)
+    const sneo = instancesOf('obj_spamton_neo_enemy')[0];
+    if (sneo && g.mercymod[sneo.myself] > 99) {
+      sneo.endcon = 1;
+      return;
+    }
     this.reset = 0;
     S.scr_mnendturn(this);
   }
@@ -870,6 +876,11 @@ class BattleController extends Instance {
         if (this.havechar[2] == 0 || g.hp[3] <= 0) cant = 1;
         charoffset = 30;
       }
+      let noeblend = 0xffffff;
+      if (chartime == 5) {
+        if (!this.havechar[3] || !(g.hp[4] > 0)) { noeblend = 0x808080; cant = 1; }
+        charoffset = 30;
+      }
       if (g.tension < this.acttpcost[i]) cant = 1;
       if (chartime == 4) charoffset *= 2;
       draw_set_color(cant == 1 ? 0x808080 : 0xffffff);
@@ -879,6 +890,13 @@ class BattleController extends Instance {
       if (chartime == 4) {
         draw_sprite_ext('spr_headsusie', 0, xx + 30 + xoffset, yy + 375 + yoffset, 1, 1, 0, susblend, 1);
         draw_sprite_ext('spr_headralsei', 0, xx + 60 + xoffset, yy + 375 + yoffset, 1, 1, 0, susblend, 1);
+      }
+      if (chartime == 5) draw_sprite_ext('spr_headnoelle', 0, xx + 30 + xoffset, yy + 375 + yoffset, 1, 1, 0, noeblend, 1);
+      // (the Weird Route's call for help: the friend being called, Ralsei, then Susie, then Noelle)
+      const sneo = instancesOf('obj_spamton_neo_enemy')[0];
+      if (sneo && sneo.savemeactcon > 0) {
+        const head = sneo.savemeactcon <= 2 ? 'spr_headralsei' : sneo.savemeactcon <= 4 ? 'spr_headsusie' : 'spr_headnoelle';
+        draw_sprite_ext(head, 0, xx + 30, yy + 380, 1, 1, 0, noeblend, 1);
       }
       const s1 = string_hash_to_newline(this.actname[i] ?? ' ');
       let xs = (206 - charoffset) / Math.max(1, string_width(s1));
