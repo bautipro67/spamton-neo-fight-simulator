@@ -1,6 +1,6 @@
 // Player options and control bindings, remembered in this browser when storage is available.
-import { G, controls, setControls } from './runtime/gm.js?v=20261120132039';
-import { setMasterVolume } from './runtime/audio.js?v=20261120132039';
+import { G, controls, setControls } from './runtime/gm.js?v=20261120142323';
+import { setMasterVolume } from './runtime/audio.js?v=20261120142323';
 
 const SETTINGS_KEY = 'sneo-sim-settings';
 const CONTROLS_KEY = 'sneo-sim-controls';

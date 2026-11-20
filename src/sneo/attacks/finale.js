@@ -15,16 +15,16 @@ import {
   lengthdir_x, lengthdir_y, draw_self, draw_sprite, draw_sprite_ext, draw_triangle, draw_circle,
   draw_set_colour, draw_get_color, draw_set_alpha, draw_get_alpha,
   snd_play, snd_loop, snd_stop, snd_volume, snd_pitch, bgr,
-} from '../rt.js?v=20261120132039';
+} from '../rt.js?v=20261120142323';
 import {
   first, camerax, cameray, i_ex, eq, ge, defineShared, scr_bullet_init, scr_movetowards, scr_inverselerp,
   scr_ease_in, lerp_ease_in, scr_remapvalue, move_towards_point, snd_play_x, draw_sprite_ext_centerscale,
   room_width, room_height,
-} from '../common.js?v=20261120132039';
-import { BulletParent, CollideBullet, RegularBullet } from '../bullets.js?v=20261120132039';
-import { BasicBulletSneo, YHeartShot } from '../shots.js?v=20261120132039';
-import { SneoBulletController } from './heads.js?v=20261120132039';
-import { SpamtonNeoEnemy, STEP_HOOKS } from '../enemy.js?v=20261120132039';
+} from '../common.js?v=20261120142323';
+import { BulletParent, CollideBullet, RegularBullet } from '../bullets.js?v=20261120142323';
+import { BasicBulletSneo, YHeartShot } from '../shots.js?v=20261120142323';
+import { SneoBulletController } from './heads.js?v=20261120142323';
+import { SpamtonNeoEnemy, STEP_HOOKS } from '../enemy.js?v=20261120142323';
 
 const sneo = () => first('obj_spamton_neo_enemy');
 const heart = () => first('obj_heart');
@@ -1172,27 +1172,8 @@ class SneoBigshot extends CollideBullet {
 }
 defineObject('obj_sneo_bigshot', SneoBigshot);
 
-// ---------------------------------------------------------------- effects: obj_fadein, obj_sneo_smoke
-
-class FadeIn extends Instance {
-  constructor() { super(); this.sprite_index = 'spr_pixel_white'; }
-  create() {
-    this.image_blend = 0;
-    this.fadespeed = -0.08;
-    this.image_alpha = 1;
-    this.length = 10 + room_width / 4;
-    this.height = 10 + room_height / 4;
-    this.x = -20;
-    this.y = -20;
-    this.depth = -99999; // (the game's depth table: over everything)
-  }
-  draw() {
-    this.image_alpha += this.fadespeed;
-    draw_sprite_ext(this.sprite_index, this.image_index, this.x, this.y, this.length, this.height, 0, this.image_blend, this.image_alpha);
-    if (this.image_alpha <= 0) instance_destroy(this);
-  }
-}
-defineShared('obj_fadein', FadeIn);
+// ---------------------------------------------------------------- effects: obj_sneo_smoke
+// (obj_fadein lives in screens/cutscene.js: black by default, the white fades above set image_blend.)
 
 class SneoSmoke extends Instance {
   constructor() { super(); this.sprite_index = 'spr_sneo_smoke'; }
