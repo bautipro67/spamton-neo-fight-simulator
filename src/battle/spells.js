@@ -3,9 +3,9 @@ import {
   global, Instance, defineObject, defineScript, S, instance_create, instance_destroy, instance_exists,
   instance_find, withObj, event_user, random, ceil, round, merge_color, point_direction, point_distance,
   angle_difference, button1_p, draw_self, draw_sprite_ext, d3d_set_fog, instancesOf,
-} from '../runtime/gm.js?v=20261120023306';
-import { snd_play, snd_stop, snd_pitch, snd_volume } from '../runtime/audio.js?v=20261120023306';
-import { withInst, subst, knightEnemy } from './common.js?v=20261120023306';
+} from '../runtime/gm.js?v=20261120125010';
+import { snd_play, snd_stop, snd_pitch, snd_volume } from '../runtime/audio.js?v=20261120125010';
+import { withInst, subst, knightEnemy } from './common.js?v=20261120125010';
 
 const g = global;
 
@@ -210,19 +210,15 @@ defineScript('scr_spell', (inst, spell, caster) => {
   switch (spell) {
     case 2:
     case 11: {
-      let healnum;
-      if (spell == 2) healnum = healMod(inst, g.battlemag[caster] * 5);
-      else {
-        g.flag[1045] = Math.min(5, g.flag[1045] + 1);
-        healnum = ceil(healMod(inst, g.battlemag[caster] * 1.5 + 5 + g.flag[1045]));
-      }
+      // Chapter 2: Heal Prayer is MAG x 5 and Susie's UltimatHeal only MAG + 1 (Chapter 3 made it
+      // MAG x 1.5 + 5, growing with each use, and rewrites its description).
+      const healnum = spell == 2 ? g.battlemag[caster] * 5 : g.battlemag[caster] + 1;
       S.scr_heal(star(), healnum);
       withInst(g.charinstance[star()], h => {
         h.healnum = healnum;
         healFx(h, healnum);
       });
       g.spelldelay = 15;
-      if (spell == 11) S.scr_spellmenu_setup();
       break;
     }
     case 3:
