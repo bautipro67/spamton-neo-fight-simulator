@@ -4,8 +4,8 @@ import {
   withObj, event_user, choose, random, round, merge_color, button1_p, button2_p, button3_p,
   draw_set_color, draw_set_alpha, draw_set_font, draw_set_halign, draw_get_color, draw_rectangle,
   draw_sprite, draw_sprite_ext, draw_text_transformed,
-} from '../runtime/gm.js?v=20261119225747';
-import { withInst, gmlString, knightEnemy } from './common.js?v=20261119225747';
+} from '../runtime/gm.js?v=20261120023306';
+import { withInst, gmlString, knightEnemy } from './common.js?v=20261120023306';
 
 const g = global;
 
@@ -125,7 +125,7 @@ class AttackPress extends Instance {
         const base = { 1: 0x0000ff, 2: 0x800080, 3: 0x008000 }[j];
         draw_set_color(base);
         if (this.pressbuffer[j] > 0) draw_set_color(merge_color(base, 0xffffff, this.pressbuffer[j] / 5));
-        draw_rectangle(x + 78, y + 38 * i, x + 80 + 15 * this.boltspeed, y + 38 * i + 36, true);
+        draw_rectangle(x + 78, y + 38 * i + 1, x + 80 + 15 * this.boltspeed, y + 38 * i + 36, true);
         draw_rectangle(x + 79, y + 38 * i + 1, x + 80 + 15 * this.boltspeed - 1, y + 38 * i + 35, true);
         draw_sprite('spr_pressfront', j - 1, x, y + 38 * i);
         if (g.flag[13] == 0) draw_sprite('spr_pressfront_b', 0, x, y + 38 * i);
@@ -188,7 +188,7 @@ class AttackPress extends Instance {
           h.itemed = 0;
         });
         if (S.scr_monsterpop() != 0) {
-          if (g.mnfight != 1.5 && g.mnfight != 2) g.mnfight = 1;
+          g.mnfight = 1; // (Chapter 2; Chapter 3 skips it while the enemy turn has already begun)
           g.myfight = -1;
         } else S.scr_wincombat();
       }

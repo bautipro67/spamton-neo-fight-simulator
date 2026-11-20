@@ -6,15 +6,15 @@
 import {
   G, global, Instance, defineObject, instance_create, instance_destroy, instance_exists, instancesOf,
   choose, random, irandom, merge_color, draw_sprite_ext, d3d_set_fog, button3_p, snd_play, snd_stop, bgr, S,
-} from './rt.js?v=20261119225747';
-import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x, snd_play_pitch } from './common.js?v=20261119225747';
-import { scr_bulletspawner } from './dbullet.js?v=20261119225747';
+} from './rt.js?v=20261120023306';
+import { first, camerax, cameray, i_ex, callOr, tagParent, snd_play_x, snd_play_pitch } from './common.js?v=20261120023306';
+import { scr_bulletspawner } from './dbullet.js?v=20261120023306';
 import {
   objectExists, sprite_get_xoffset, sprite_get_yoffset, point_distance, lerp, draw_set_color, draw_set_alpha,
   draw_line_width, make_color_rgb, point_direction, lengthdir_x, lengthdir_y, draw_circle, random_range, clamp,
   draw_rectangle, keyboard_check_pressed,
-} from '../runtime/gm.js?v=20261119225747';
-import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261119225747';
+} from '../runtime/gm.js?v=20261120023306';
+import { snd_init, snd_loop, snd_pitch, snd_volume, mus_loop_ext, mus_stop, snd_is_playing } from '../runtime/audio.js?v=20261120023306';
 
 const snd_free = s => { if (s) mus_stop(s); };
 const sneoInst = () => first('obj_spamton_neo_enemy');
@@ -469,7 +469,7 @@ export class SpamtonNeoEnemy extends MonsterParent {
       }
       if (isphase('enemytalk') && this.talked === 0) this.startTalk();
       if (this.talked === 0.6) this.nextBalloon();
-      if (this.talked === 1 && isphase('enemytalk')) {
+      if (this.talked === 1 && isphase('enemytalk') && !i_ex('obj_choicer_neo')) {
         this.talktimer += 1;
         if ((button3_p() && this.talktimer > 15) || !writerExists()) {
           killWriters();
@@ -573,7 +573,9 @@ export class SpamtonNeoEnemy extends MonsterParent {
   startBullets() {
     if (this.partmode === 40) { this.partmode = 1; this.shockthreshold = 0; this.hurttimer2 = 0; }
     this.rtimer = 0;
-    S.scr_blconskip(this, -1);
+    // (the bullets wait while the cherubs of the F1 heal are still out)
+    if (!instance_exists('obj_spamton_cherub')) S.scr_blconskip(this, -1);
+    else this.talktimer += 1;
     if (!isphase('bullets')) return;
     const [rr, d] = this.playedAttack();
     if (!instance_exists('obj_growtangle')) {

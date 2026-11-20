@@ -5,17 +5,17 @@ import {
   instance_number, withObj, random, button1_p, button2_h, string_length, string_char_at,
   string_insert, string_delete, draw_set_font, draw_set_color, draw_get_color, draw_set_alpha, draw_text,
   draw_text_transformed, draw_text_color, draw_rectangle, draw_sprite_ext, draw_self, button3_h, instancesOf,
-} from '../runtime/gm.js?v=20261119225747';
-import { snd_play } from '../runtime/audio.js?v=20261119225747';
+} from '../runtime/gm.js?v=20261120023306';
+import { snd_play } from '../runtime/audio.js?v=20261120023306';
 
 const sin = Math.sin;
-import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261119225747';
+import { fontName, splitCaller, view_x, view_y } from './common.js?v=20261120023306';
 
 // Text sounds that exist in this build; the others are silent.
 const TEXTSND = {
   snd_text: 'snd_text', snd_txtsus: 'snd_txtsus', snd_txtral: 'snd_txtral', snd_txtjok: 'snd_txtjok',
 };
-import { G } from '../runtime/gm.js?v=20261119225747';
+import { G } from '../runtime/gm.js?v=20261120023306';
 const tsnd = n => TEXTSND[n] ?? null;
 
 // scr_textsetup(font, color, x, y, charline, shake, rate, sound, hspace, vspace, special)
@@ -692,7 +692,7 @@ class BattleBlcon extends Instance {
   create() {
     this.sprite_index = 'spr_battleblcon';
     this.image_speed = 0;
-    this.mywriter = instance_create(this.x + 5, this.y + 3, 'obj_writer');
+    this.mywriter = instance_create(this.x + 5, this.y + 5, 'obj_writer'); // (Chapter 2: y + 5; Chapter 3 moved it to y + 3)
     this.mywriter.depth = 9999999;
     this.auto_length = 0;
     this.side = 1;

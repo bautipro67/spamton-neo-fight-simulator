@@ -7,9 +7,9 @@ import {
   left_p, right_p, up_p, down_p, button1_p, button2_p, string_width, string_hash_to_newline,
   draw_set_color, draw_set_alpha, draw_set_font, draw_set_halign, draw_rectangle, draw_sprite,
   draw_sprite_ext, draw_text, draw_text_colour, draw_text_transformed, draw_line_width, keyboard_check, draw_get_font,
-} from '../runtime/gm.js?v=20261119225747';
-import { snd_play, snd_volume, snd_pitch, mus_loop_ext } from '../runtime/audio.js?v=20261119225747';
-import { arr, arr2, view_x, view_y, withInst, exists, gmlString, subst, knightEnemy } from './common.js?v=20261119225747';
+} from '../runtime/gm.js?v=20261120023306';
+import { snd_play, snd_volume, snd_pitch, mus_loop_ext } from '../runtime/audio.js?v=20261120023306';
+import { arr, arr2, view_x, view_y, withInst, exists, gmlString, subst, knightEnemy } from './common.js?v=20261120023306';
 
 const sin = Math.sin, cos = Math.cos;
 const g = global;
@@ -709,7 +709,7 @@ class BattleController extends Instance {
           draw_rectangle(xx + 400, yy + 380 + i * 30, xx + 500, yy + 380 + i * 30 + 15, false);
           draw_set_color(0x00ff00);
           let hp = g.hp[g.char[i]] / g.maxhp[g.char[i]] * 100;
-          if (hp <= -100) hp = -100;
+          // (Chapter 2 draws the bar without the -100 floor Chapter 3 added)
           draw_rectangle(xx + 400, yy + 380 + i * 30, xx + 400 + hp, yy + 380 + i * 30 + 15, false);
         }
       }
@@ -764,7 +764,7 @@ class BattleController extends Instance {
       draw_set_color(0xffffff);
       let mercydraw = 0, tireddraw = 0, c1 = 0xffffff, c2 = 0xffffff;
       let aqcolor = merge_color(0x00ffff, 0x0000ff, 0.3);
-      if (g.charturn == 2) aqcolor = merge_color(aqcolor, 0xffffff, 0.5 + sin(this.t_siner / 4) * 0.5);
+      // (Chapter 2: a TIRED enemy's name stays a steady aqua on Ralsei's turn too)
       if (g.monsterstatus[i] == 1) tireddraw = 1;
       if (g.mercymod[i] >= g.mercymax[i]) mercydraw = 1;
       const namewidth = string_width(string_hash_to_newline(g.monstername[i]));
@@ -842,17 +842,15 @@ class BattleController extends Instance {
           for (let s = 0; s < 3; s++) {
             if (g.monster[s] == 1 && g.monsterstatus[s] == 1 && g.encounterno != 31) pacify_glow = 1;
           }
-          if (pacify_glow == 1) {
-            const aq = merge_color(0x00ffff, 0x0000ff, 0.3);
-            draw_set_color(merge_color(aq, 0xffffff, 0.5 + sin(this.t_siner / 4) * 0.5));
-          }
+          // (Chapter 2: a steady aqua; the flashing glow is Chapter 3's)
+          if (pacify_glow == 1) draw_set_color(merge_color(0x00ffff, 0x0000ff, 0.3));
         }
         draw_text(xx + 30 + n * 230, yy + 375 + i * 30, string_hash_to_newline(g.battlespellname[thischar][k] ?? ' '));
       }
     }
     draw_set_color(0x808080);
     draw_text(xx + spell_offset, yy + 375, string_hash_to_newline(g.battlespelldesc[thischar][page * 6 + spellcoord] ?? ' '));
-    const thiscost = floor((g.battlespellcost[thischar][page * 6 + spellcoord] ?? 0) / g.maxtension * 100);
+    const thiscost = round((g.battlespellcost[thischar][page * 6 + spellcoord] ?? 0) / g.maxtension * 100);
     draw_set_color(0xffa040);
     if (thiscost > 0) draw_text(xx + spell_offset, yy + 440, string_hash_to_newline(gmlString(thiscost) + '% TP'));
   }
